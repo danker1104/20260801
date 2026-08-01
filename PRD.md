@@ -1,8 +1,16 @@
 # PRD: GD-Food
 
 ## 1. 제품 개요
+- 웹 앱 이름: GD-Food
 - 목적: 앱 진입 즉시 지도 기반 탐색을 제공하고, 1km 추천으로 빠르게 식당을 선택하게 한다.
 - 아키텍처: 단일 웹 아키텍처(모놀리식)
+
+## 1.1 문서 구성
+1. IDEA.md: 서비스 기획 초안
+2. PRD.md: 제품 요구사항 기준
+3. Design.md: UI/UX 디자인 기준
+4. TRD.md: 기술 아키텍처 기준
+5. Agents.md: 문서 작업 운영 가이드
 
 ## 2. 문제 정의
 낯선 지역에서 텍스트 목록 중심 탐색은 위치 감각이 부족해 선택까지 시간이 길어진다.
@@ -19,10 +27,7 @@
 3. userId는 클라이언트 입력으로 받지 않고, 서버 세션 또는 신뢰 가능한 내부 헤더에서 주입한다.
 
 ## 5. 기술 및 연동
-1. 프론트엔드: HTML, CSS, JavaScript
-2. 백엔드: Python FastAPI
-3. 데이터베이스: PostgreSQL (개발/테스트 SQLite 가능)
-4. 외부 API: SK Open API
+- 기술 스택/연동 상세는 TRD.md를 단일 기준으로 따른다.
 
 ## 6. 기능 요구사항
 ### FR-01 진입 즉시 지도 노출
@@ -43,18 +48,10 @@
 2. 리뷰 통계 추천 점수 반영
 
 ## 7. 핵심 API
-1. GET /api/restaurants/nearby
-- query: lat, lng, radius=1000, category(optional), sort(optional)
-
-2. GET /api/restaurants/{restaurantId}/reviews
-- query: page(optional), size(optional)
-
-3. POST /api/restaurants/{restaurantId}/reviews
-- body: rating(1~5), content
-- userId는 서버 세션 또는 신뢰 가능한 내부 헤더에서 주입
+- API 계약 상세는 TRD.md 9장을 단일 기준으로 따른다.
 
 ## 8. 추천 로직
-- recommendScore = 0.4 x distanceScore + 0.3 x externalScore + 0.3 x reviewScore
+- 추천 점수 계산식/정규화 규칙 상세는 TRD.md 11장을 단일 기준으로 따른다.
 
 ## 9. MVP 범위
 포함:
@@ -67,6 +64,7 @@
 1. 로그인 구현
 2. 예약/결제
 3. 실시간 혼잡도
+4. 관리자 화면
 
 ## 10. 성공 기준
 1. 첫 화면 지도 노출 성공률 100%
@@ -74,16 +72,14 @@
 3. 카테고리 필터 결과 일관성
 4. 리뷰 반영 정상 동작
 
-## 11. 디자인 핵심 요구사항
-1. 콘셉트: Modern Card Map
-2. 핵심 컬러: #3447AA, #FBEAEB
-3. 레이아웃: 데스크톱 지도 60%/리스트 40%
-4. 모바일: 첫 진입 기본 탭은 지도이며, 지도/리스트 토글을 제공한다.
-5. 모바일 상태 규칙: 첫 진입은 지도 탭, 이후에는 마지막 사용 탭 상태 유지
+## 10.1 검증/배포 기준
+1. 핵심 사용자 흐름 E2E 테스트 통과
+2. 장애 상황에서 재시도 경로 제공
+3. 배포 전 체크리스트와 릴리스 기준은 PRD 승인 항목으로 관리
+
+## 11. 디자인 기준
+- UI/UX 아키텍처 기준은 TRD.md 10장을 단일 기준으로 따른다.
+- 시각/컴포넌트 상세 스펙은 Design.md를 기준으로 따른다.
 
 ## 12. 데이터 무결성 및 보안 제약
-1. Review.rating은 1~5 범위 체크 제약을 둔다.
-2. Restaurant.externalId는 유니크 제약을 둔다.
-3. Review는 restaurantId+userId 기준 중복 정책(단일 리뷰 후 수정) 적용한다.
-4. 리뷰 저장과 ReviewStats 갱신은 단일 트랜잭션으로 처리한다.
-5. 클라이언트가 userId를 임의 지정할 수 없도록 서버에서 사용자 식별을 강제한다.
+- 데이터 무결성/보안 제약 상세는 TRD.md 7장, 8장을 단일 기준으로 따른다.

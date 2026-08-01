@@ -6,20 +6,21 @@
 
 ## 2. 저장소 성격
 - 현재 저장소는 구현 코드보다 기획/요구사항 문서 중심이다.
-- 주요 문서: README.md, IDEA.md, PRD.md, 아키텍처.md, Design.md, TRD.md
+- 주요 문서: README.md, IDEA.md, PRD.md, Design.md, TRD.md
+- 아키텍처.md는 TRD 통합 안내 문서로 유지한다.
 - 구현 전 단계에서 문서 품질과 일관성이 가장 중요하다.
 
 ## 3. 우선 기준 문서
 - 제품 요구 우선: PRD.md
 - 기술 구현 기준: TRD.md
-- 시스템 구조 기준: 아키텍처.md
+- 시스템 구조 기준: TRD.md(아키텍처 통합 섹션)
 - 화면/경험 기준: Design.md
 - 아이디어 초안: IDEA.md
 
 충돌이 발생하면 다음 순서로 판단한다.
 1. PRD.md의 제품 의도
 2. TRD.md의 기술 계약
-3. 아키텍처.md와 Design.md의 구체화 내용
+3. Design.md의 구체화 내용
 4. IDEA.md의 초기 제안
 
 ## 4. 핵심 원칙
