@@ -126,3 +126,50 @@
 - distanceScore: 가까울수록 높은 값
 - externalScore: 외부 평점 기반 0~1 정규화
 - reviewScore: 내부 리뷰 평점 기반 0~1 정규화
+
+## 12. Agent Skills 운영 기준
+이 절은 본 프로젝트 문서/구현 작업에서 사용하는 Skills의 적용 시점과 작성 대상을 정의한다.
+
+### 12.1 기본 사용 Skills (Global)
+1. find-skills
+- 무엇을 작성/수행할 때: 신규 작업에 필요한 Skill 후보 조사, 설치 대상 선정 근거 정리
+- 언제 사용할지: 새 작업 착수 전, 기존 Skill로 해결이 어려운 요구가 나온 시점
+
+2. frontend-design
+- 무엇을 작성/수행할 때: 지도 우선 UI 구조, 카드/필터/토글 레이아웃, 시각 방향 제안
+- 언제 사용할지: 화면 구조 초안 수립 시, UI 개편안 작성 시
+
+3. web-design-guidelines
+- 무엇을 작성/수행할 때: 접근성, 반응형, 상호작용 규칙 점검 결과 작성
+- 언제 사용할지: UI 스펙 리뷰, PR 전 점검, 릴리스 전 품질 확인 시
+
+4. writing-guidelines
+- 무엇을 작성/수행할 때: PRD/TRD/Design 문장 품질 개선, 용어 통일, 모호성 제거
+- 언제 사용할지: 문서 수정 직후, 릴리스 노트/가이드 정리 시
+
+### 12.2 추가 설치 Skills
+1. fastapi-templates
+- 무엇을 작성/수행할 때: FastAPI 프로젝트 구조, 라우터/서비스/스키마 분리, 예외 처리/DI 패턴 적용
+- 언제 사용할지: 백엔드 API 구현 시작 시, 신규 엔드포인트 추가 시, 구조 리팩터링 시
+
+2. accessibility
+- 무엇을 작성/수행할 때: WCAG 2.2 기준 점검, 키보드 탐색/포커스/대비/대체 텍스트 개선안 작성
+- 언제 사용할지: 화면 구현 후 QA 단계, 배포 전 접근성 점검 단계
+
+### 12.3 단계별 사용 순서
+1. 기획/문서 단계
+- find-skills, writing-guidelines 우선 적용
+
+2. UI 설계/구현 단계
+- frontend-design으로 설계 후 web-design-guidelines와 accessibility로 검증
+
+3. 백엔드 구현 단계
+- fastapi-templates 우선 적용 후 writing-guidelines로 API 문서 품질 정리
+
+4. 배포 전 검증 단계
+- web-design-guidelines, accessibility, writing-guidelines 순으로 최종 점검
+
+### 12.4 운영 원칙
+1. 기능 구현 전에 어떤 Skill을 적용할지 먼저 선언한다.
+2. Skill 적용 결과는 PR 설명 또는 변경 문서에 근거로 남긴다.
+3. 동일 요구를 반복할 때는 검증된 Skill 조합을 재사용한다.
