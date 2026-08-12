@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍽️ SG-Food - 위치 기반 식당 추천</title>
+    
+    <!-- 카카오 Maps API SDK (다이나믹 로드) -->
+    <!-- API 키는 config.js에서 설정되며, 로드는 kakao-map-loader.js에서 처리됩니다 -->
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/styles.css?v=20260812a">
+
+    <script>
+        (function () {
+            if (location.hostname !== 'localhost' || location.port !== '3000') {
+                return;
+            }
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then((registrations) => {
+                    registrations.forEach((registration) => registration.unregister());
+                }).catch(() => {});
+            }
+
+            if ('caches' in window) {
+                caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
+            }
+        })();
+    </script>
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-left">
+                <h1 class="navbar-title">🍽️ SG-Food</h1>
+                <p class="navbar-subtitle">위치 기반 식당 추천</p>
+            </div>
+            <div class="navbar-right">
+                <button id="toggleTabBtn" class="tab-toggle-mobile" style="display: none;">
+                    <span id="toggleTabText">리스트</span> 보기
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Desktop: 2-Column Layout -->
+        <div class="content-wrapper desktop-layout">
+            <!-- Map Panel (60%) -->
+            <div class="panel panel-map">
+                <div id="map" class="map-container"></div>
+                <div id="mapLoading" class="loading-indicator" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>지도 로드 중...</p>
+                </div>
+            </div>
+
+            <!-- List Panel (40%) -->
+            <div class="panel panel-list">
+                <!-- Filter Section -->
+                <div class="filter-section">
+                    <h3 class="filter-title">주변 식당</h3>
+                    
+                    <!-- Category Chips -->
+                    <div class="category-chips">
+                        <button class="chip chip-active" data-category="">
+                            🍴 전체
+                        </button>
+                        <button class="chip" data-category="한식">
+                            🥘 한식
+                        </button>
+                        <button class="chip" data-category="일식">
+                            🍣 일식
+                        </button>
+                        <button class="chip" data-category="중식">
+                            🥡 중식
+                        </button>
+                        <button class="chip" data-category="양식">
+                            🍝 양식
+                        </button>
+                        <button class="chip" data-category="카페">
+                            ☕ 카페
+                        </button>
+                    </div>
+
+                    <!-- Sort Options -->
+                    <div class="sort-section">
+                        <label for="sortSelect">정렬:</label>
+                        <select id="sortSelect" class="sort-select">
+                            <option value="recommend">⭐ 추천순</option>
+                            <option value="distance">📍 거리순</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Restaurant List -->
+                <div class="list-container">
+                    <div id="restaurantList" class="restaurant-list">
+                        <div class="empty-state">
+                            <p>식당을 검색하고 있습니다...</p>
+                        </div>
+                    </div>
+                    
+                    <div id="listLoading" class="loading-indicator" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>목록 로드 중...</p>
+                    </div>
+                </div>
+
+                <!-- Refresh Button -->
+                <button id="refreshBtn" class="btn btn-primary" style="width: 100%; margin-top: 16px; margin-bottom: 16px;">
+                    ↻ 현위치 다시 검색
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile: Tabbed Layout -->
+        <div class="mobile-tabs">
+            <!-- Tab Buttons -->
+            <div class="tab-buttons">
+                <button class="tab-btn tab-btn-active" data-tab="map">🗺️ 지도</button>
+                <button class="tab-btn" data-tab="list">📋 리스트</button>
+            </div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Map Tab -->
+                <div id="mapTab" class="tab-pane tab-pane-active">
+                    <div id="mapMobile" class="map-container"></div>
+                    <div id="mapLoadingMobile" class="loading-indicator" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>지도 로드 중...</p>
+                    </div>
+                </div>
+
+                <!-- List Tab -->
+                <div id="listTab" class="tab-pane">
+                    <!-- Filter Section -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">주변 식당</h3>
+                        
+                        <!-- Category Chips -->
+                        <div class="category-chips">
+                            <button class="chip chip-active" data-category="">
+                                🍴 전체
+                            </button>
+                            <button class="chip" data-category="한식">
+                                🥘 한식
+                            </button>
+                            <button class="chip" data-category="일식">
+                                🍣 일식
+                            </button>
+                            <button class="chip" data-category="중식">
+                                🥡 중식
+                            </button>
+                            <button class="chip" data-category="양식">
+                                🍝 양식
+                            </button>
+                            <button class="chip" data-category="카페">
+                                ☕ 카페
+                            </button>
+                        </div>
+
+                        <!-- Sort Options -->
+                        <div class="sort-section">
+                            <label for="sortSelectMobile">정렬:</label>
+                            <select id="sortSelectMobile" class="sort-select">
+                                <option value="recommend">⭐ 추천순</option>
+                                <option value="distance">📍 거리순</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Restaurant List -->
+                    <div class="list-container">
+                        <div id="restaurantListMobile" class="restaurant-list">
+                            <div class="empty-state">
+                                <p>식당을 검색하고 있습니다...</p>
+                            </div>
+                        </div>
+                        
+                        <div id="listLoadingMobile" class="loading-indicator" style="display: none;">
+                            <div class="spinner"></div>
+                            <p>목록 로드 중...</p>
+                        </div>
+                    </div>
+
+                    <!-- Refresh Button -->
+                    <button id="refreshBtnMobile" class="btn btn-primary" style="width: 100%; margin-top: 16px; margin-bottom: 16px;">
+                        ↻ 현위치 다시 검색
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restaurant Detail Modal -->
+    <div id="detailModal" class="modal" style="display: none;">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+            <button class="modal-close">&times;</button>
+            
+            <div id="detailContent">
+                <!-- Will be filled by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Toast -->
+    <div id="errorToast" class="toast toast-error" style="display: none;"></div>
+
+    <!-- Success Toast -->
+    <div id="successToast" class="toast toast-success" style="display: none;"></div>
+
+    <!-- Scripts -->
+    <!-- 1. 설정 파일 먼저 로드 -->
+    <script src="js/config.js?v=20260812a"></script>
+    
+        <!-- 2. 카카오 Maps API SDK 로더 (config.js의 API 키 사용) -->
+    <script src="js/kakao-map-loader.js?v=20260812a"></script>
+    
+    <!-- 3. 유틸리티 및 API 핸들러 -->
+    <script src="js/utils.js?v=20260812a"></script>
+    <script src="js/api.js?v=20260812a"></script>
+    
+    <!-- 4. 지도 및 앱 로직 (카카오맵 기반) -->
+    <script src="js/map.js?v=20260812a"></script>
+    <script src="js/app.js?v=20260812a"></script>
+</body>
+</html>

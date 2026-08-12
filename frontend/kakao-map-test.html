@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🍽️ 카카오맵 SDK 테스트</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .status {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .status-icon {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-icon.loading {
+            background: #FFC107;
+            color: white;
+        }
+
+        .status-icon.success {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-icon.error {
+            background: #f44336;
+            color: white;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .panel h2 {
+            margin-bottom: 16px;
+            font-size: 18px;
+            color: #333;
+        }
+
+        #map {
+            width: 100%;
+            height: 400px;
+            background: #e0e0e0;
+            border-radius: 6px;
+            margin-top: 12px;
+        }
+
+        .console {
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            line-height: 1.4;
+        }
+
+        .console-line {
+            margin: 4px 0;
+            padding: 2px 0;
+        }
+
+        .console-line.info {
+            color: #00ffff;
+        }
+
+        .console-line.success {
+            color: #00ff00;
+        }
+
+        .console-line.error {
+            color: #ff6b6b;
+        }
+
+        .console-line.warn {
+            color: #ffff00;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-primary {
+            background: #3447AA;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #757575;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .sdk-url-box {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            word-break: break-all;
+            border: 1px solid #ddd;
+        }
+
+        .config-info {
+            background: #f0f8ff;
+            border-left: 4px solid #3447AA;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 12px;
+            font-size: 13px;
+        }
+
+        .config-info code {
+            background: #e8f0ff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #3447AA;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🍽️ 카카오맵 SDK 테스트</h1>
+            <p>카카오 Maps JavaScript API가 정상적으로 로드되고 작동하는지 테스트합니다.</p>
+            
+            <!-- Status -->
+            <div class="status">
+                <div class="status-item">
+                    <div class="status-icon" id="configStatus">⏳</div>
+                    <span id="configStatusText">설정 확인 중...</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-icon" id="sdkStatus">⏳</div>
+                    <span id="sdkStatusText">SDK 로드 중...</span>
+                </div>
+                <div class="status-item">
+                    <div class="status-icon" id="mapStatus">⏳</div>
+                    <span id="mapStatusText">지도 초기화 대기</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Map Panel -->
+            <div class="panel">
+                <h2>🗺️ 지도 미리보기</h2>
+                <p style="color: #666; font-size: 13px;">
+                    카카오맵 SDK가 정상 로드되었다면 지도가 표시됩니다. (강남역 기본 위치)
+                </p>
+                <div id="map"></div>
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="initTestMap()">지도 초기화</button>
+                    <button class="btn btn-secondary" onclick="centerToSeoul()">서울 중심</button>
+                    <button class="btn btn-secondary" onclick="centerToGangnam()">강남역</button>
+                    <button class="btn btn-danger" onclick="testSDKUrl()">SDK URL 테스트</button>
+                </div>
+                <div class="sdk-url-box" id="sdkUrlBox" style="display:none;"></div>
+            </div>
+
+            <!-- Console Panel -->
+            <div class="panel">
+                <h2>🔍 진단 콘솔</h2>
+                <div class="console" id="console"></div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="clearConsole()">콘솔 초기화</button>
+                    <button class="btn btn-secondary" onclick="testSDK()">SDK 테스트</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Config Info -->
+        <div class="panel">
+            <h2>⚙️ 설정 가이드</h2>
+            <div class="config-info">
+                <strong>카카오 API 키 설정 방법:</strong><br><br>
+                1. <code>frontend/js/config.js</code> 파일을 열어주세요<br><br>
+                2. <code>KAKAO_MAPS_API_KEY</code> 변수에 발급받은 키를 설정하세요:<br>
+                <code style="display: block; margin: 8px 0; padding: 8px; background: #e8f0ff;">const KAKAO_MAPS_API_KEY = 'YOUR_API_KEY_HERE';</code><br>
+                3. .env 파일에도 동일한 키를 설정하세요:<br>
+                <code style="display: block; margin: 8px 0; padding: 8px; background: #e8f0ff;">KAKAO_MAPS_API_KEY=YOUR_API_KEY_HERE</code><br><br>
+                <strong>키 발급:</strong> <a href="https://developers.kakao.com" target="_blank">https://developers.kakao.com</a><br>
+                <strong>도메인 등록:</strong> <code>http://localhost:3000</code> (이미 등록됨)
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/kakao-map-loader.js"></script>
+
+    <script>
+        // 콘솔 커스텀
+        const consoleEl = document.getElementById('console');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        function addConsoleLog(level, message) {
+            const line = document.createElement('div');
+            line.className = `console-line ${level}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = {
+                info: '[INFO]',
+                success: '[✓]',
+                error: '[✗]',
+                warn: '[⚠]',
+            }[level] || '[LOG]';
+
+            line.textContent = `${timestamp} ${prefix} ${message}`;
+            consoleEl.appendChild(line);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        console.log = function(...args) {
+            originalLog(...args);
+            addConsoleLog('info', args.join(' '));
+        };
+
+        console.error = function(...args) {
+            originalError(...args);
+            addConsoleLog('error', args.join(' '));
+        };
+
+        console.warn = function(...args) {
+            originalWarn(...args);
+            addConsoleLog('warn', args.join(' '));
+        };
+
+        // 테스트 함수들
+        function updateStatus(id, status, text) {
+            const el = document.getElementById(id);
+            if (!el) {
+                console.error(`요소를 찾을 수 없습니다: #${id}`);
+                return;
+            }
+            
+            const textEl = document.getElementById(id + 'Text');
+            
+            el.className = 'status-icon';
+            
+            if (status === 'loading') {
+                el.classList.add('loading');
+                el.textContent = '⏳';
+            } else if (status === 'success') {
+                el.classList.add('success');
+                el.textContent = '✓';
+            } else if (status === 'error') {
+                el.classList.add('error');
+                el.textContent = '✗';
+            }
+            
+            if (textEl) {
+                textEl.textContent = text;
+            }
+        }
+
+        // 설정 확인
+        function checkConfig() {
+            updateStatus('configStatus', 'loading', '설정 확인 중...');
+            
+            if (window.APP_CONFIG && window.APP_CONFIG.kakao) {
+                const key = window.APP_CONFIG.kakao.apiKey;
+                if (key && key !== 'YOUR_KAKAO_JAVASCRIPT_API_KEY_HERE') {
+                    updateStatus('configStatus', 'success', '✓ 카카오 API 키 설정됨');
+                    console.log('카카오 API 키가 설정되었습니다');
+                    return true;
+                }
+            }
+            
+            updateStatus('configStatus', 'error', '✗ API 키 미설정');
+            console.error('⚠️ 카카오 API 키를 설정해주세요. (frontend/js/config.js)');
+            return false;
+        }
+
+        // SDK 로드 모니터링
+        document.addEventListener('kakaoMapsReady', () => {
+            updateStatus('sdkStatus', 'success', '✓ SDK 로드 완료');
+            console.log('카카오 Maps SDK 로드 완료');
+            testSDK();
+        });
+
+        // 초기화
+        function init() {
+            console.log('🍽️ 카카오맵 테스트 시작...');
+            checkConfig();
+            
+            // 3초 후에도 SDK가 로드되지 않았으면 오류 표시
+            setTimeout(() => {
+                if (!window.kakao?.maps) {
+                    updateStatus('sdkStatus', 'error', '✗ SDK 로드 실패');
+                    console.error('SDK 로드가 지연되고 있습니다. 콘솔 오류를 확인하세요.');
+                }
+            }, 3000);
+        }
+
+        function initTestMap() {
+            if (!window.kakao?.maps) {
+                console.error('카카오 Maps SDK가 로드되지 않았습니다');
+                return;
+            }
+
+            updateStatus('mapStatus', 'loading', '지도 초기화 중...');
+            
+            try {
+                const mapContainer = document.getElementById('map');
+                const mapOption = {
+                    center: new kakao.maps.LatLng(37.4979, 127.0276), // 강남역
+                    level: 3,
+                };
+
+                window.testMap = new kakao.maps.Map(mapContainer, mapOption);
+                
+                // 테스트 마커 추가
+                const markerPosition = new kakao.maps.LatLng(37.4979, 127.0276);
+                const marker = new kakao.maps.Marker({
+                    position: markerPosition,
+                    title: '강남역 테스트 마커',
+                });
+                marker.setMap(window.testMap);
+                
+                updateStatus('mapStatus', 'success', '✓ 지도 초기화 완료');
+                console.log('테스트 지도가 초기화되었습니다');
+            } catch (error) {
+                updateStatus('mapStatus', 'error', '✗ 초기화 실패');
+                console.error('지도 초기화 실패:', error);
+            }
+        }
+
+        function centerToSeoul() {
+            if (!window.testMap) {
+                console.error('지도가 초기화되지 않았습니다');
+                return;
+            }
+            
+            const center = new kakao.maps.LatLng(37.5665, 126.9780); // 서울 시청
+            window.testMap.setCenter(center);
+            console.log('서울 시청 위치로 이동했습니다');
+        }
+
+        function centerToGangnam() {
+            if (!window.testMap) {
+                console.error('지도가 초기화되지 않았습니다');
+                return;
+            }
+            
+            const center = new kakao.maps.LatLng(37.4979, 127.0276); // 강남역
+            window.testMap.setCenter(center);
+            console.log('강남역 위치로 이동했습니다');
+        }
+
+        function testSDK() {
+            console.log('SDK 테스트 시작...');
+            
+            if (!window.kakao?.maps) {
+                console.error('카카오 Maps SDK가 로드되지 않았습니다');
+                return;
+            }
+
+            console.log('✓ kakao 객체 존재');
+            console.log('✓ kakao.maps 라이브러리 존재');
+            
+            if (window.kakao.maps.services) {
+                console.log('✓ kakao.maps.services 라이브러리 로드됨');
+            }
+            
+            console.log('SDK 테스트 완료');
+        }
+
+        function testSDKUrl() {
+            console.log('🔍 SDK URL 테스트 시작...');
+            
+            const apiKey = window.APP_CONFIG?.kakao?.apiKey || window.KAKAO_MAPS_API_KEY;
+            if (!apiKey || apiKey === 'YOUR_KAKAO_JAVASCRIPT_API_KEY_HERE') {
+                console.error('API 키가 설정되지 않았습니다');
+                return;
+            }
+
+            const sdkUrl = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(apiKey)}&libraries=services`;
+            
+            const box = document.getElementById('sdkUrlBox');
+            box.style.display = 'block';
+            box.innerHTML = `<strong>로드할 SDK URL:</strong><br>${sdkUrl}`;
+            
+            console.log('📍 SDK URL:', sdkUrl);
+            console.log('🔑 API 키 (처음 8글자):', apiKey.substring(0, 8) + '***');
+
+            // Fetch로 URL 테스트
+            console.log('🌐 HTTP 헤더 테스트 중...');
+            fetch(sdkUrl, { method: 'HEAD' })
+                .then(response => {
+                    console.log('✅ HTTP 상태:', response.status, response.statusText);
+                    if (response.status === 403) {
+                        console.error('❌ 403 Forbidden - 도메인이 등록되지 않았거나 API 키가 유효하지 않습니다');
+                    } else if (response.status === 401) {
+                        console.error('❌ 401 Unauthorized - API 키가 유효하지 않습니다');
+                    } else if (response.status === 200) {
+                        console.log('✅ URL 접근 가능 - 다른 원인이 있습니다');
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ Fetch 오류:', error.message);
+                    console.error('💡 CORS 오류이거나 네트워크 문제입니다');
+                });
+
+            console.log('🔍 콘솔과 Network 탭을 확인하세요');
+        }
+
+        function clearConsole() {
+            consoleEl.innerHTML = '';
+            console.log('콘솔이 초기화되었습니다');
+        }
+
+        // 페이지 로드 시 시작
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+
+    <!-- 필수: 카카오맵 SDK (정적 로드) -->
+    <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ea98108653eb9462c1a49b7a97c03b3f&libraries=services" 
+            onload="document.dispatchEvent(new CustomEvent('kakaoMapsReady', { detail: { kakao: window.kakao, maps: window.kakao.maps } }))"></script>
+    
+    <!-- 설정 및 맵 초기화 -->
+    <script src="js/config.js"></script>
+    <script src="js/kakao-map-loader.js"></script>
+</body>
+</html>

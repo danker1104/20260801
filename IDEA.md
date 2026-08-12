@@ -1,7 +1,7 @@
-# GD-Food 웹 앱 기획서
+# SG-Food 웹 앱 기획서
 
 ## 1. 프로젝트 개요
-- 웹 앱 이름: GD-Food
+- 웹 앱 이름: SG-Food
 - 한줄 소개: 앱 진입 즉시 지도를 보여주고, 현재 위치 1km 내 식당을 리뷰 기반으로 추천하는 서비스
 
 ## 2. 문제 정의
@@ -33,11 +33,36 @@
 - userId는 클라이언트 입력으로 받지 않고, 서버 세션 또는 신뢰 가능한 내부 헤더에서 주입한다.
 
 ## 6. 기술 및 외부 연동
-- 외부 API: SK Open API
+
+### 프론트엔드
+- 언어: HTML, CSS, JavaScript (ES6+)
+- 지도 라이브러리: Leaflet (v1.9+)
+  - 설치: npm install leaflet leaflet.markercluster
+  - 타일: OpenStreetMap
 - 위치 수집: Geolocation API
-- 프론트엔드: HTML, CSS, JavaScript
-- 백엔드: Python FastAPI
-- 데이터 저장: PostgreSQL (개발/테스트는 SQLite 가능)
+
+### 백엔드
+- 프레임워크: Python FastAPI (v0.100+)
+- 외부 API 클라이언트: requests 라이브러리
+
+### 데이터베이스
+- 프로덕션: PostgreSQL (v13+)
+- 개발/테스트: SQLite 허용
+
+### 외부 API 연동
+- **SK Open API (T-Map POI 검색)**
+  - 엔드포인트: `https://apis.openapi.sk.com/tmap/pois?version=1`
+  - 메서드: GET
+  - 인증: API 키 (환경 변수 `SK_TMAP_API_KEY`)
+  - 용도: 현재 위치 주변 음식점 POI 검색
+  - 응답 형식: JSON (totalCount, pois.poi[] 배열)
+  - 핵심 필드:
+    - `poi.id`: 외부 식당 ID (externalId)
+    - `poi.name`: 식당 이름
+    - `poi.noorLat, poi.noorLon`: 위치 좌표
+    - `poi.lowerAddrName`: 주소
+  - 성능 목표: p95 500ms 이내
+  - 재시도: 실패 시 최대 2회
 
 ## 7. 추천 로직 초안
 - 종합점수 = 0.4 x 거리점수 + 0.3 x 외부평점점수 + 0.3 x 자체리뷰점수

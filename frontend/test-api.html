@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Test</h1>
+    <pre id="result">Loading...</pre>
+    <script>
+        async function testAPI() {
+            try {
+                const response = await fetch('http://localhost:8000/api/restaurants/nearby?lat=35.1650&lng=129.1700&radius=1000');
+                const data = await response.json();
+                console.log('API Response:', data);
+                document.getElementById('result').textContent = 
+                    `Status: ${response.status}\n` +
+                    `Total: ${data.total}\n` +
+                    `Restaurants: ${data.restaurants.length}\n` +
+                    `First: ${data.restaurants[0]?.name} - ${data.restaurants[0]?.distance}m`;
+            } catch (error) {
+                document.getElementById('result').textContent = `Error: ${error.message}`;
+                console.error('API Error:', error);
+            }
+        }
+        testAPI();
+    </script>
+</body>
+</html>

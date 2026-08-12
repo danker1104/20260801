@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Console Logger</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #00ff00;
+        }
+        #console {
+            background: #000;
+            padding: 10px;
+            height: 600px;
+            overflow-y: auto;
+            border: 1px solid #00ff00;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .log { color: #00ff00; }
+        .warn { color: #ffff00; }
+        .error { color: #ff0000; }
+        .info { color: #00ffff; }
+    </style>
+</head>
+<body>
+    <h1>Console Logger</h1>
+    <div id="console"></div>
+    
+    <script>
+        const consoleEl = document.getElementById('console');
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        const originalInfo = console.info;
+        
+        function addLog(level, args) {
+            const msg = args.map(a => typeof a === 'object' ? JSON.stringify(a, null, 2) : String(a)).join(' ');
+            const time = new Date().toISOString();
+            const line = `[${time}] [${level}] ${msg}\n`;
+            consoleEl.textContent += line;
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+        
+        console.log = (...args) => { originalLog(...args); addLog('LOG', args); };
+        console.warn = (...args) => { originalWarn(...args); addLog('WARN', args); };
+        console.error = (...args) => { originalError(...args); addLog('ERROR', args); };
+        console.info = (...args) => { originalInfo(...args); addLog('INFO', args); };
+    </script>
+    
+    <!-- Load the app -->
+    <script>
+        console.log('Starting to load app...');
+    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.1/dist/leaflet.markercluster.js"></script>
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
