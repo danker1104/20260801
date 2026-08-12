@@ -9,7 +9,7 @@
 
 // ===== 개발 환경에서는 여기에 카카오 API 키를 직접 설정합니다 =====
 // .env 파일의 KAKAO_MAPS_API_KEY 값을 여기에 복사하세요
-const KAKAO_MAPS_API_KEY = 'ea98108653eb9462c1a49b7a97c03b3f';
+const KAKAO_MAPS_API_KEY = 'YOUR_KAKAO_JAVASCRIPT_API_KEY_HERE';
 
 // API 기본 설정
 const API_CONFIG = {

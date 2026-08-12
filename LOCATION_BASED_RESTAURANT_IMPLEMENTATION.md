@@ -182,7 +182,7 @@ if (distance > 100) {  // 100m 이상 변화
 
 `.env` 파일에 다음이 설정되어 있어야 합니다:
 ```bash
-KAKAO_MAPS_API_KEY=ea98108653eb9462c1a49b7a97c03b3f
+KAKAO_MAPS_API_KEY=YOUR_KAKAO_MAPS_API_KEY_HERE
 SK_TMAP_API_KEY=...
 DATABASE_URL=sqlite:///./sg_food.db
 FASTAPI_HOST=0.0.0.0

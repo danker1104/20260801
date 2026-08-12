@@ -60,3 +60,6 @@ logs/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Copilot agent artifacts
+.agents/
