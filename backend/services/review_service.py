@@ -58,6 +58,7 @@ class ReviewService:
         self,
         db: AsyncSession,
         review_id: int,
+        restaurant_id: int,
         user_id: str
     ) -> bool:
         """
@@ -75,6 +76,7 @@ class ReviewService:
             deleted = await self.review_repo.delete_by_id_and_user(
                 db,
                 review_id=review_id,
+                restaurant_id=restaurant_id,
                 user_id=user_id
             )
             if deleted:

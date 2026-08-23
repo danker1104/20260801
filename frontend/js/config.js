@@ -9,11 +9,24 @@
 
 // ===== 개발 환경에서는 여기에 카카오 API 키를 직접 설정합니다 =====
 // .env 파일의 KAKAO_MAPS_API_KEY 값을 여기에 복사하세요
-const KAKAO_MAPS_API_KEY = 'YOUR_KAKAO_JAVASCRIPT_API_KEY_HERE';
+const KAKAO_MAPS_API_KEY = '19c48f95f507d5fb46fafa8d36285ba2';
+const DEBUG_LOGGING = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
 
-// API 기본 설정
+window.debugLog = (...args) => {
+    if (DEBUG_LOGGING) {
+        console.log(...args);
+    }
+};
+
+// API 기본 설정. 별도 API 호스트가 필요하면 window.__API_BASE_URL__로 주입한다.
+const defaultApiBaseUrl = window.__API_BASE_URL__ || (
+    location.hostname === 'localhost' && location.port === '3000'
+        ? 'http://localhost:8000/api'
+        : '/api'
+);
+
 const API_CONFIG = {
-    baseURL: 'http://localhost:8000/api',
+    baseURL: defaultApiBaseUrl,
     timeout: 10000,
 };
 

@@ -11,10 +11,39 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./sg_food.db")
 KAKAO_MAPS_API_KEY = os.getenv("KAKAO_MAPS_API_KEY")
 KAKAO_MAPS_API_URL = "https://dapi.kakao.com/v2/local/search/keyword.json"
 
+# ===== 대구푸드 공공 API =====
+DAEGU_FOOD_API_URL = os.getenv(
+    "DAEGU_FOOD_API_URL",
+    "https://www.daegufood.go.kr/kor/api/tasty.html",
+)
+DAEGU_FOOD_DEFAULT_ADDR = os.getenv("DAEGU_FOOD_DEFAULT_ADDR", "중구")
+DAEGU_FOOD_CACHE_TTL_SECONDS = int(os.getenv("DAEGU_FOOD_CACHE_TTL_SECONDS", 1800))
+
+# ===== Gemini API =====
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_API_URL = os.getenv(
+    "GEMINI_API_URL",
+    "https://generativelanguage.googleapis.com/v1beta/models",
+)
+
+# ===== 리뷰 이벤트성 스파이크 정리 =====
+REVIEW_EVENT_FILTER_ENABLED = os.getenv("REVIEW_EVENT_FILTER_ENABLED", "true").lower() == "true"
+REVIEW_SPIKE_WINDOW_HOURS = int(os.getenv("REVIEW_SPIKE_WINDOW_HOURS", 24))
+REVIEW_SPIKE_MIN_COUNT = int(os.getenv("REVIEW_SPIKE_MIN_COUNT", 12))
+REVIEW_SPIKE_MULTIPLIER = float(os.getenv("REVIEW_SPIKE_MULTIPLIER", 2.5))
+REVIEW_EVENT_AI_CONFIDENCE_THRESHOLD = float(os.getenv("REVIEW_EVENT_AI_CONFIDENCE_THRESHOLD", 0.6))
+
 # ===== FastAPI 서버 =====
 FASTAPI_HOST = os.getenv("FASTAPI_HOST", "0.0.0.0")
 FASTAPI_PORT = int(os.getenv("FASTAPI_PORT", 8000))
-DEBUG = os.getenv("DEBUG", "True").lower() == "true"
+DEBUG = os.getenv("DEBUG", "False").lower() == "true"
+
+# ===== 인증 =====
+AUTH_SECRET = os.getenv("AUTH_SECRET")
+AUTH_TOKEN_TTL_SECONDS = int(os.getenv("AUTH_TOKEN_TTL_SECONDS", 86400))
+if not AUTH_SECRET and DEBUG:
+    AUTH_SECRET = "development-only-change-me"
 
 # ===== CORS =====
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")

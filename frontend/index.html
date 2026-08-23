@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🍽️ SG-Food - 위치 기반 식당 추천</title>
+    <title>🍽️ 뭐 먹을래? - 위치 기반 식당 추천</title>
     
     <!-- 카카오 Maps API SDK (다이나믹 로드) -->
     <!-- API 키는 config.js에서 설정되며, 로드는 kakao-map-loader.js에서 처리됩니다 -->
     
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=20260812a">
+    <link rel="stylesheet" href="css/styles.css?v=20260823f">
 
     <script>
         (function () {
@@ -34,7 +34,7 @@
     <nav class="navbar">
         <div class="navbar-content">
             <div class="navbar-left">
-                <h1 class="navbar-title">🍽️ SG-Food</h1>
+                <h1 class="navbar-title">🍽️ 뭐 먹을래?</h1>
                 <p class="navbar-subtitle">위치 기반 식당 추천</p>
             </div>
             <div class="navbar-right">
@@ -198,15 +198,34 @@
     </div>
 
     <!-- Restaurant Detail Modal -->
-    <div id="detailModal" class="modal" style="display: none;">
+    <div id="detailModal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="detailModalTitle">
         <div class="modal-overlay" id="modalOverlay"></div>
         <div class="modal-content">
-            <button class="modal-close">&times;</button>
+            <button class="modal-close" type="button" aria-label="상세 정보 닫기">&times;</button>
             
             <div id="detailContent">
                 <!-- Will be filled by JavaScript -->
             </div>
         </div>
+    </div>
+
+    <!-- Food Preference Survey -->
+    <div id="surveyModal" class="survey-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="surveyTitle">
+        <div class="survey-overlay"></div>
+        <section class="survey-card">
+            <div class="survey-header">
+                <div>
+                    <p class="survey-kicker">오늘의 한 끼</p>
+                    <h2 id="surveyTitle">지금, 어떤 음식이 끌리나요?</h2>
+                </div>
+                <span id="surveyProgress" class="survey-progress" aria-live="polite">1/5</span>
+            </div>
+            <div id="surveyContent" class="survey-content"></div>
+            <div class="survey-actions">
+                <button id="surveyBackBtn" class="btn btn-secondary" type="button">이전</button>
+                <button id="surveyNextBtn" class="btn btn-primary" type="button">다음</button>
+            </div>
+        </section>
     </div>
 
     <!-- Error Toast -->
@@ -216,18 +235,26 @@
     <div id="successToast" class="toast toast-success" style="display: none;"></div>
 
     <!-- Scripts -->
-    <!-- 1. 설정 파일 먼저 로드 -->
-    <script src="js/config.js?v=20260812a"></script>
+    <!-- 1. 런타임 API 베이스 URL 강제 설정 -->
+    <script>
+        window.__API_BASE_URL__ = '/api';
+    </script>
+
+    <!-- 2. 설정 파일 로드 -->
+    <script src="js/config.js?v=20260823f"></script>
     
-        <!-- 2. 카카오 Maps API SDK 로더 (config.js의 API 키 사용) -->
-    <script src="js/kakao-map-loader.js?v=20260812a"></script>
+        <!-- 3. 카카오 Maps API SDK 로더 (config.js의 API 키 사용) -->
+    <script src="js/kakao-map-loader.js?v=20260823f"></script>
     
-    <!-- 3. 유틸리티 및 API 핸들러 -->
-    <script src="js/utils.js?v=20260812a"></script>
-    <script src="js/api.js?v=20260812a"></script>
+    <!-- 4. 유틸리티 및 API 핸들러 -->
+    <script src="js/utils.js?v=20260823f"></script>
+    <script src="js/api.js?v=20260823f"></script>
+    <script src="js/survey-data.js?v=20260823a"></script>
+    <script src="js/survey.js?v=20260823a"></script>
     
-    <!-- 4. 지도 및 앱 로직 (카카오맵 기반) -->
-    <script src="js/map.js?v=20260812a"></script>
-    <script src="js/app.js?v=20260812a"></script>
+    <!-- 5. 지도 및 앱 로직 (카카오맵 기반) -->
+    <script src="js/map.js?v=20260823f"></script>
+    <script src="js/app.js?v=20260823f"></script>
 </body>
 </html>
+

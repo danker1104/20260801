@@ -181,7 +181,7 @@ http://localhost:3000/kakao-map-test.html
 카카오 Developer Console에서 반드시 도메인을 등록해야 합니다:
 
 1. https://developers.kakao.com/console/app 접속
-2. "SG-Food" 앱 클릭
+2. "뭐 먹을래?" 앱 클릭
 3. "서비스" 탭 → "지도(Maps)" → "활성화" 클릭
 4. 도메인 등록: `http://localhost:3000`
 
@@ -225,3 +225,4 @@ A: 브라우저의 뷰포트가 768px 이하이면 모바일 탭 레이아웃이
 **작성일:** 2026-08-08
 **상태:** ✅ 완료
 **마지막 수정:** 2026-08-08
+

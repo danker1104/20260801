@@ -10,32 +10,59 @@ let currentCategory = '';
 let currentSort = 'recommend';
 let userId = null;
 let locationWatchId = null;  // Geolocation watch ID
+let detailModalTrigger = null;
+
+function infoOrNone(value) {
+    if (value === null || value === undefined) {
+        return '정보 없음';
+    }
+
+    const text = String(value).trim();
+    if (!text || text === '없음' || text === '없습니다.' || text === 'null' || text === 'undefined') {
+        return '정보 없음';
+    }
+
+    return text;
+}
+
+function formatRecommendDisplay(score) {
+    if (score === null || score === undefined || Number.isNaN(Number(score))) {
+        return '평가 없음';
+    }
+    return formatScore(score);
+}
 
 /**
  * 페이지 로드 시 초기화
  */
 document.addEventListener('DOMContentLoaded', async () => {
-    userId = getUserId();
+    try {
+        userId = await initializeAuth();
+    } catch (error) {
+        console.error('인증 초기화 실패:', error);
+        showError('서비스 인증을 초기화할 수 없습니다');
+        return;
+    }
     
-    console.log('🍽️ SG-Food 애플리케이션 시작');
-    console.log('기본 위치(권한 거부 시 fallback):', currentLocation);
-    console.log('📺 뷰포트 크기:', window.innerWidth, 'x', window.innerHeight);
+    debugLog('🍽️ 뭐 먹을래? 애플리케이션 시작');
+    debugLog('기본 위치(권한 거부 시 fallback):', currentLocation);
+    debugLog('📺 뷰포트 크기:', window.innerWidth, 'x', window.innerHeight);
     
     // 위치 권한 요청 및 실시간 추적 시작
-    console.log('📍 위치 정보 요청 중...');
+    debugLog('📍 위치 정보 요청 중...');
     try {
         await requestLocationPermission();
-        console.log('Location permission resolved');
+        debugLog('Location permission resolved');
     } catch (err) {
         console.error('Location permission error:', err);
     }
     
-    console.log('최종 위치:', currentLocation);
+    debugLog('최종 위치:', currentLocation);
 
     // 반응형 레이아웃 확인
-    console.log('🔄 반응형 레이아웃 업데이트 시작');
+    debugLog('🔄 반응형 레이아웃 업데이트 시작');
     updateResponsiveLayout();
-    console.log('✅ 반응형 레이아웃 업데이트 완료');
+    debugLog('✅ 반응형 레이아웃 업데이트 완료');
 
     // 지도 초기화 (async 함수이므로 await 필요)
     try {
@@ -43,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await initMapMobile(currentLocation.latitude, currentLocation.longitude);
         // 초기 렌더 시점의 레이아웃 계산이 늦는 브라우저를 위해 한 번 더 리사이즈 적용
         setTimeout(() => resizeMap(), 150);
-        console.log('✅ 지도 초기화 완료');
+        debugLog('✅ 지도 초기화 완료');
     } catch (err) {
         console.error('❌ 지도 초기화 실패:', err);
     }
@@ -52,9 +79,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupEventListeners();
 
     // 초기 데이터 로드
-    console.log('Starting loadRestaurants...');
+    debugLog('Starting loadRestaurants...');
     await loadRestaurants();
-    console.log('loadRestaurants completed');
+    debugLog('loadRestaurants completed');
 });
 
 /**
@@ -75,7 +102,7 @@ async function requestLocationPermission() {
                     longitude: position.coords.longitude,
                     accuracy: position.coords.accuracy,
                 };
-                console.log('✅ 현재 위치:', currentLocation);
+                debugLog('✅ 현재 위치:', currentLocation);
                 
                 // 실시간 위치 추적 시작
                 startLocationTracking();
@@ -133,7 +160,7 @@ function startLocationTracking() {
         navigator.geolocation.clearWatch(locationWatchId);
     }
 
-    console.log('🎯 실시간 위치 추적 시작');
+    debugLog('🎯 실시간 위치 추적 시작');
 
     locationWatchId = navigator.geolocation.watchPosition(
         (position) => {
@@ -152,7 +179,7 @@ function startLocationTracking() {
             );
 
             if (distance > 100) {
-                console.log(`📍 위치 변경 감지 (${distance.toFixed(0)}m)`);
+                debugLog(`📍 위치 변경 감지 (${distance.toFixed(0)}m)`);
                 currentLocation = newLocation;
 
                 // 지도 중심 이동 (카카오맵 API)
@@ -191,11 +218,11 @@ function updateResponsiveLayout() {
     if (isMobile) {
         desktopLayout.style.setProperty('display', 'none', 'important');
         mobileTabs.style.setProperty('display', 'flex', 'important');
-        console.log('📱 모바일 레이아웃 활성화 (', window.innerWidth, 'px)');
+        debugLog('📱 모바일 레이아웃 활성화 (', window.innerWidth, 'px)');
     } else {
         desktopLayout.style.setProperty('display', 'flex', 'important');
         mobileTabs.style.setProperty('display', 'none', 'important');
-        console.log('🖥️ 데스크톱 레이아웃 활성화 (', window.innerWidth, 'px)');
+        debugLog('🖥️ 데스크톱 레이아웃 활성화 (', window.innerWidth, 'px)');
     }
 }
 
@@ -284,16 +311,17 @@ function setupEventListeners() {
     const modalClose = document.querySelector('.modal-close');
     const detailModal = document.getElementById('detailModal');
 
+    const closeDetailModal = () => {
+        detailModal.style.display = 'none';
+        detailModalTrigger?.focus();
+    };
+
     if (modalOverlay) {
-        modalOverlay.addEventListener('click', () => {
-            detailModal.style.display = 'none';
-        });
+        modalOverlay.addEventListener('click', closeDetailModal);
     }
 
     if (modalClose) {
-        modalClose.addEventListener('click', () => {
-            detailModal.style.display = 'none';
-        });
+        modalClose.addEventListener('click', closeDetailModal);
     }
 
     // 마커 클릭 이벤트
@@ -303,6 +331,18 @@ function setupEventListeners() {
 }
 
 /**
+ * 설문 결과를 기존 카테고리 검색으로 연결한다.
+ */
+window.applySurveyRecommendations = function applySurveyRecommendations(categories) {
+    currentCategory = categories;
+    document.querySelectorAll('.chip').forEach((chip) => {
+        const chipCategory = chip.getAttribute('data-category');
+        chip.classList.toggle('chip-active', categories.includes(chipCategory));
+    });
+    loadRestaurants();
+};
+
+/**
  * 현위치 다시 검색
  * 1) 현재 위치를 다시 요청하고
  * 2) 지도를 최신 위치로 이동한 뒤
@@ -310,12 +350,12 @@ function setupEventListeners() {
  */
 async function refreshNearbyRestaurants() {
     try {
-        console.log('↻ 현위치 다시 검색 시작');
+        debugLog('↻ 현위치 다시 검색 시작');
 
         // 최신 위치를 강제로 다시 확인
         const latestLocation = await requestCurrentLocationOnce();
         currentLocation = latestLocation;
-        console.log('📍 새 위치 수신:', currentLocation);
+        debugLog('📍 새 위치 수신:', currentLocation);
 
         // 실시간 추적도 최신 좌표 기준으로 재시작
         startLocationTracking();
@@ -327,7 +367,7 @@ async function refreshNearbyRestaurants() {
 
         // 주변 식당 재조회
         await loadRestaurants();
-        console.log('✅ 현위치 다시 검색 완료:', currentLocation);
+        debugLog('✅ 현위치 다시 검색 완료:', currentLocation);
     } catch (error) {
         console.error('❌ 현위치 다시 검색 실패:', error);
         showError('현재 위치를 다시 가져오지 못했습니다. 위치 권한과 GPS 상태를 확인해주세요.');
@@ -373,7 +413,7 @@ async function loadRestaurants(radius = 1000, limit = 10) {
         showLoading('desktop', true);
         showLoading('mobile', true);
 
-        console.log('Calling searchNearbyRestaurants with:', {
+        debugLog('Calling searchNearbyRestaurants with:', {
             lat: currentLocation.latitude,
             lng: currentLocation.longitude,
             category: currentCategory,
@@ -390,9 +430,9 @@ async function loadRestaurants(radius = 1000, limit = 10) {
             limit
         );
 
-        console.log('API response:', response);
+        debugLog('API response:', response);
         restaurants = response.restaurants || [];
-        console.log(`${restaurants.length}개의 식당 로드됨`);
+        debugLog(`${restaurants.length}개의 식당 로드됨`);
 
         // 정렬
         sortRestaurants();
@@ -448,23 +488,34 @@ function renderRestaurantList(platform) {
     }
 
     container.innerHTML = restaurants.map((restaurant) => `
-        <div class="restaurant-card" onclick="loadRestaurantDetail('${restaurant.id}')">
+        <div class="restaurant-card" data-restaurant-id="${escapeHtml(restaurant.id)}" role="button" tabindex="0">
             <div class="card-header">
-                <h3 class="card-name">${restaurant.name}</h3>
-                <div class="card-score">${formatScore(restaurant.recommendScore || 0)}</div>
+                <h3 class="card-name">${escapeHtml(restaurant.name)}</h3>
+                <div class="card-score">${formatRecommendDisplay(restaurant.recommendScore)}</div>
             </div>
             
             <div class="card-meta">
                 <span>📍 ${formatDistance(restaurant.distance)}</span>
-                <span class="card-category">${getCategoryEmoji(restaurant.category)} ${restaurant.category || '기타'}</span>
+                <span class="card-category">${getCategoryEmoji(restaurant.category)} ${escapeHtml(restaurant.category || '기타')}</span>
             </div>
             
             <div class="card-footer">
-                <span>⭐ ${restaurant.reviewAvg ? formatStars(restaurant.reviewAvg) : '평가 없음'}</span>
+                <span>⭐ ${restaurant.reviewAvg ? `${formatAverageRating(restaurant.reviewAvg)} (${formatStars(restaurant.reviewAvg)})` : '평가 없음'}</span>
                 <span>📝 ${restaurant.reviewCount || 0}개 리뷰</span>
             </div>
         </div>
     `).join('');
+
+    container.querySelectorAll('.restaurant-card').forEach((card) => {
+        const openDetail = () => loadRestaurantDetail(card.dataset.restaurantId);
+        card.addEventListener('click', openDetail);
+        card.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openDetail();
+            }
+        });
+    });
 }
 
 /**
@@ -480,6 +531,7 @@ async function loadRestaurantDetail(restaurantId) {
         }
 
         selectedRestaurant = restaurant;
+        detailModalTrigger = document.activeElement;
 
         // 지도 중심 이동
         centerMapOnRestaurant(restaurant, mapDesktop);
@@ -491,10 +543,10 @@ async function loadRestaurantDetail(restaurantId) {
 
         content.innerHTML = `
             <div class="detail-header">
-                <h2 class="detail-name">${restaurant.name}</h2>
+                <h2 id="detailModalTitle" class="detail-name">${escapeHtml(restaurant.name)}</h2>
                 <div class="detail-meta">
                     <span>📍 ${formatDistance(restaurant.distance)}</span>
-                    <span>⭐ ${restaurant.reviewAvg ? restaurant.reviewAvg.toFixed(1) : '0.0'}</span>
+                    <span>⭐ ${restaurant.reviewAvg ? formatAverageRating(restaurant.reviewAvg) : '0.0'}</span>
                     <span>📝 ${restaurant.reviewCount || 0}개</span>
                 </div>
             </div>
@@ -503,8 +555,21 @@ async function loadRestaurantDetail(restaurantId) {
                 <div class="detail-section">
                     <h3 class="detail-section-title">기본 정보</h3>
                     <p><strong>카테고리:</strong> ${getCategoryEmoji(restaurant.category)} ${restaurant.category || '미분류'}</p>
-                    <p><strong>주소:</strong> ${restaurant.address}</p>
-                    <p><strong>추천 점수:</strong> ${formatScore(restaurant.recommendScore || 0)}/5.0</p>
+                    <p><strong>주소:</strong> ${escapeHtml(restaurant.address)}</p>
+                    <p><strong>추천 점수:</strong> ${restaurant.recommendScore === null || restaurant.recommendScore === undefined ? '평가 없음' : `${formatScore(restaurant.recommendScore)}/5.0`}</p>
+                </div>
+
+                <div class="detail-section">
+                    <h3 class="detail-section-title">대구 공공데이터 정보</h3>
+                    <p><strong>영업시간:</strong> ${escapeHtml(infoOrNone(restaurant.daeguBusinessHours))}</p>
+                    <p><strong>전화번호:</strong> ${escapeHtml(infoOrNone(restaurant.daeguPhone))}</p>
+                    <p><strong>대표메뉴:</strong> ${escapeHtml(infoOrNone(restaurant.daeguMenu))}</p>
+                    <p><strong>주차:</strong> ${escapeHtml(infoOrNone(restaurant.daeguParking))}</p>
+                    <p><strong>예약:</strong> ${escapeHtml(infoOrNone(restaurant.daeguReservation))}</p>
+                    <p><strong>지하철:</strong> ${escapeHtml(infoOrNone(restaurant.daeguSubway))}</p>
+                    <p><strong>버스:</strong> ${escapeHtml(infoOrNone(restaurant.daeguBus))}</p>
+                    <p><strong>홈페이지:</strong> ${escapeHtml(infoOrNone(restaurant.daeguHomepage))}</p>
+                    <p><strong>설명:</strong> ${escapeHtml(infoOrNone(restaurant.daeguDescription))}</p>
                 </div>
 
                 <div class="detail-section">
@@ -518,7 +583,7 @@ async function loadRestaurantDetail(restaurantId) {
                         <textarea id="reviewContent" 
                                   placeholder="이 식당에 대한 의견을 공유해주세요" 
                                   style="width: 100%; padding: 8px; border: 1px solid #D9E0EE; border-radius: 8px; font-family: inherit; resize: vertical; min-height: 60px;"></textarea>
-                        <button class="btn btn-primary" style="margin-top: 8px; width: 100%;" onclick="submitReview('${restaurant.id}')">
+                        <button id="submitReviewBtn" class="btn btn-primary" style="margin-top: 8px; width: 100%;" type="button">
                             ✓ 리뷰 작성
                         </button>
                     </div>
@@ -533,12 +598,14 @@ async function loadRestaurantDetail(restaurantId) {
 
         // 별점 클릭 이벤트
         setupRatingInput();
+        document.getElementById('submitReviewBtn').addEventListener('click', () => submitReview(restaurant.id));
 
         // 리뷰 목록 로드
         await loadReviews(restaurantId);
 
         // 모달 표시
         modal.style.display = 'flex';
+        modal.querySelector('.modal-close')?.focus();
     } catch (error) {
         console.error('상세 정보 로드 실패:', error);
         showError('상세 정보를 불러올 수 없습니다');
@@ -576,6 +643,11 @@ async function loadReviews(restaurantId) {
         const reviews = response.reviews || [];
 
         const reviewsList = document.getElementById('reviewsList');
+        const reviewsTitle = document.querySelector('#reviewsSection .detail-section-title');
+        if (reviewsTitle) {
+            reviewsTitle.textContent = `리뷰 (${reviews.length})`;
+        }
+
         if (reviews.length === 0) {
             reviewsList.innerHTML = '<p style="text-align: center; color: #999;">아직 리뷰가 없습니다</p>';
             return;
@@ -585,20 +657,23 @@ async function loadReviews(restaurantId) {
             <div class="review-item">
                 <div class="review-header">
                     <div>
-                        <div class="review-user">${review.userId}</div>
+                        <div class="review-user">${escapeHtml(review.userId)}</div>
                         <div class="review-rating">${formatStars(review.rating)}</div>
                     </div>
                     ${review.userId === userId ? `
-                        <button onclick="deleteReviewItem(${restaurantId}, ${review.id})" 
+                        <button class="delete-review-btn" data-review-id="${escapeHtml(review.id)}"
                                 style="background: #E63946; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer;">
                             삭제
                         </button>
                     ` : ''}
                 </div>
-                <p class="review-content">${review.content || '(내용 없음)'}</p>
+                <p class="review-content">${escapeHtml(review.content || '(내용 없음)')}</p>
                 <p style="font-size: 12px; color: #999; margin-top: 8px;">${formatRelativeTime(review.createdAt)}</p>
             </div>
         `).join('');
+        reviewsList.querySelectorAll('.delete-review-btn').forEach((button) => {
+            button.addEventListener('click', () => deleteReviewItem(restaurantId, button.dataset.reviewId));
+        });
     } catch (error) {
         console.error('리뷰 로드 실패:', error);
         document.getElementById('reviewsList').innerHTML = '<p style="text-align: center; color: #999;">리뷰를 불러올 수 없습니다</p>';
@@ -619,14 +694,14 @@ async function submitReview(restaurantId) {
     }
 
     try {
-        await createReview(restaurantId, rating, content, userId);
+        await createReview(restaurantId, rating, content, userId, selectedRestaurant);
         showSuccess('리뷰가 작성되었습니다');
         
         // 모달 재로드
         loadRestaurantDetail(restaurantId);
     } catch (error) {
         console.error('리뷰 작성 실패:', error);
-        showError('리뷰 작성에 실패했습니다');
+        showError(error.message || '리뷰 작성에 실패했습니다');
     }
 }
 
@@ -674,3 +749,4 @@ window.addEventListener('load', () => {
         switchTab(lastTab);
     }
 });
+

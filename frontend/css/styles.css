@@ -427,13 +427,14 @@ button, input, select {
     border: none;
     background: transparent;
     font-size: 24px;
-    color: var(--text-secondary);
+    color: #000000;
+    font-weight: 700;
     cursor: pointer;
     transition: color var(--transition-fast);
 }
 
 .modal-close:hover {
-    color: var(--text-primary);
+    color: #000000;
 }
 
 /* ===== Loading Indicator ===== */
@@ -469,7 +470,8 @@ button, input, select {
     bottom: 0;
     z-index: var(--z-modal);
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: center;
 }
 
 .modal-overlay {
@@ -487,13 +489,182 @@ button, input, select {
     z-index: var(--z-modal);
     width: 100%;
     max-width: 600px;
-    margin-left: auto;
-    margin-right: 0;
+    margin: 0 var(--spacing-md);
     background: white;
-    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    border-radius: var(--radius-lg);
     max-height: 90vh;
     overflow-y: auto;
     animation: slideUp var(--transition-normal);
+}
+
+/* ===== Food Preference Survey ===== */
+.survey-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg);
+}
+
+.survey-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 28, 52, 0.58);
+    backdrop-filter: blur(2px);
+}
+
+.survey-card {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 560px);
+    max-height: min(700px, 90vh);
+    overflow-y: auto;
+    padding: var(--spacing-xl);
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 20px 60px rgba(31, 42, 68, 0.22);
+    animation: surveyEnter 300ms ease-out;
+}
+
+.survey-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.survey-kicker,
+.survey-result-label {
+    margin-bottom: var(--spacing-sm);
+    color: var(--primary-color);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+}
+
+.survey-header h2 {
+    max-width: 380px;
+    font-size: 24px;
+    color: var(--text-primary);
+}
+
+.survey-progress {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--soft-surface);
+    color: var(--primary-color);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.survey-question {
+    margin-bottom: var(--spacing-md);
+    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.survey-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.survey-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 52px;
+    padding: 12px var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: white;
+    color: var(--text-primary);
+    font-size: 14px;
+    text-align: left;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.survey-option-emoji {
+    flex: 0 0 auto;
+    font-size: 28px;
+    line-height: 1;
+}
+
+.survey-option-label {
+    line-height: 1.35;
+}
+
+.survey-option:hover,
+.survey-option.selected {
+    border-color: var(--primary-color);
+    background: #eef0ff;
+    color: var(--primary-color);
+}
+
+.survey-option.selected {
+    box-shadow: inset 3px 0 0 var(--primary-color);
+    font-weight: 700;
+}
+
+.survey-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-xl);
+}
+
+.survey-actions .btn {
+    min-width: 110px;
+}
+
+.survey-actions .btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.survey-result h3 {
+    margin-bottom: var(--spacing-md);
+    color: var(--primary-color);
+    font-size: 28px;
+}
+
+.survey-reason {
+    margin-bottom: var(--spacing-lg);
+    padding: var(--spacing-md);
+    border-left: 3px solid var(--primary-color);
+    background: #f5f6ff;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.survey-score-list {
+    display: grid;
+    gap: 6px;
+}
+
+.survey-score-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.survey-score-row strong {
+    color: var(--text-primary);
+}
+
+@keyframes surveyEnter {
+    from { transform: translateY(12px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 
 @keyframes slideUp {
@@ -689,6 +860,34 @@ button, input, select {
     color: #FFD700;
 }
 
+.star-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 1px;
+    vertical-align: middle;
+}
+
+.rating-star {
+    position: relative;
+    display: inline-block;
+    line-height: 1;
+    color: #D9E0EE;
+}
+
+.rating-star.is-full {
+    color: #FFD700;
+}
+
+.rating-star.is-half::after {
+    content: '★';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 50%;
+    overflow: hidden;
+    color: #FFD700;
+}
+
 .review-content {
     font-size: 14px;
     line-height: 1.6;
@@ -697,6 +896,31 @@ button, input, select {
 
 /* ===== Responsive Design ===== */
 @media (max-width: 768px) {
+    .modal {
+        align-items: flex-end;
+        justify-content: center;
+    }
+
+    .survey-modal {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .survey-card {
+        width: 100%;
+        max-height: 92vh;
+        padding: var(--spacing-lg) var(--spacing-md);
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    }
+
+    .survey-header h2 {
+        font-size: 21px;
+    }
+
+    .survey-options {
+        grid-template-columns: 1fr;
+    }
+
     .desktop-layout {
         display: none !important;
     }
@@ -716,6 +940,7 @@ button, input, select {
     .modal-content {
         width: 100%;
         max-width: 100%;
+        margin: 0;
         border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     }
 
@@ -760,6 +985,11 @@ button, input, select {
 
     .btn {
         width: 100%;
+    }
+
+    .survey-actions .btn {
+        width: auto;
+        flex: 1;
     }
 }
 

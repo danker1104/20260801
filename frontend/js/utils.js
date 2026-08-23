@@ -22,22 +22,75 @@ function formatScore(score) {
     return Math.min(5, Math.max(0, score)).toFixed(1);
 }
 
+/** 외부 데이터의 HTML 삽입을 방지한다. */
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 /**
  * 평균 평점을 별모양으로 표시
  */
 function formatStars(rating) {
-    const fullStars = Math.floor(rating);
-    const hasHalf = rating % 1 >= 0.5;
-    let stars = '★'.repeat(fullStars);
-    if (hasHalf) stars += '☆';
-    return stars.padEnd(5, '☆');
+    const normalized = roundToHalf(rating);
+    const fullStars = Math.floor(normalized);
+    const hasHalf = normalized % 1 === 0.5;
+
+    let html = `<span class="star-rating" aria-label="${normalized.toFixed(1)}점">`;
+    for (let i = 1; i <= 5; i++) {
+        let cls = 'is-empty';
+        if (i <= fullStars) {
+            cls = 'is-full';
+        } else if (hasHalf && i === fullStars + 1) {
+            cls = 'is-half';
+        }
+        html += `<span class="rating-star ${cls}">★</span>`;
+    }
+    html += '</span>';
+    return html;
+}
+
+/**
+ * 평점을 0.5 단위로 반올림
+ */
+function roundToHalf(value) {
+    const num = Number(value);
+    if (!Number.isFinite(num)) {
+        return 0;
+    }
+    return Math.min(5, Math.max(0, Math.round(num * 2) / 2));
+}
+
+/**
+ * 평균 평점을 0.5 단위 숫자로 표시 (예: 1.5, 2.0, 2.5)
+ */
+function formatAverageRating(value) {
+    return roundToHalf(value).toFixed(1);
 }
 
 /**
  * 날짜를 상대 시간으로 포맷팅 (예: 2시간 전)
  */
 function formatRelativeTime(dateString) {
-    const date = new Date(dateString);
+    if (!dateString) return '';
+
+    // 백엔드가 타임존 없는 ISO 문자열(예: 2026-08-15T02:13:06.597017)을 주면 UTC로 간주한다.
+    let normalized = String(dateString).trim();
+    const hasTimezone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(normalized);
+
+    if (!hasTimezone) {
+        // 초과 마이크로초(6자리)는 Date 파싱 호환성을 위해 밀리초(3자리)로 축약
+        normalized = normalized.replace(/\.(\d{3})\d+$/, '.$1');
+        normalized += 'Z';
+    }
+
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) return '';
+
     const now = new Date();
     const diffMs = now - date;
     const diffSec = Math.floor(diffMs / 1000);
@@ -80,15 +133,10 @@ function showSuccess(message) {
 }
 
 /**
- * userId 생성 (테스트용, 실제는 인증 시스템에서)
+ * 서버 인증으로 발급된 현재 익명 사용자 ID를 표시할 때 사용
  */
 function getUserId() {
-    let userId = localStorage.getItem('userId');
-    if (!userId) {
-        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        localStorage.setItem('userId', userId);
-    }
-    return userId;
+    return null;
 }
 
 /**

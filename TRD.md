@@ -1,7 +1,7 @@
-# TRD: SG-Food 기술 아키텍처
+# TRD: 뭐 먹을래? 기술 아키텍처
 
 ## 1. 문서 목적
-이 문서는 SG-Food의 기술 아키텍처 단일 기준 문서다.
+이 문서는 뭐 먹을래?의 기술 아키텍처 단일 기준 문서다.
 제품 요구사항, UX 요구사항, 운영 목표의 원문 기준은 PRD.md를 따른다.
 
 ## 2. 아키텍처 원칙
@@ -13,10 +13,10 @@
 ## 3. 기술 스택
 ### 3.1 프론트엔드
 1. 언어: HTML, CSS, JavaScript (ES6+)
-2. 지도 라이브러리: Leaflet (v1.9+)
-   - 설치: npm install leaflet leaflet.markercluster
-   - 타일 서비스: OpenStreetMap (기본)
-   - 마커 클러스터링: Leaflet.markercluster
+2. 지도 라이브러리: Kakao Maps JavaScript SDK
+   - SDK: https://dapi.kakao.com/v2/maps/sdk.js
+   - 필수 설정: JavaScript 키, 도메인 등록(localhost 포함)
+   - Places 서비스: 키워드/카테고리 검색 연동
 3. HTTP 클라이언트: fetch API
 
 ### 3.2 백엔드
@@ -29,9 +29,13 @@
 2. 개발/테스트: SQLite 허용
 
 ### 3.4 외부 연동
-1. SK Open API (T-Map POI 검색)
-   - 엔드포인트: https://apis.openapi.sk.com/tmap/pois
-   - 인증: API 키 (환경 변수: SK_TMAP_API_KEY)
+1. Kakao Local API (장소 검색)
+   - 엔드포인트: https://dapi.kakao.com/v2/local/search/keyword.json
+   - 인증: KakaoAK REST API 키 (환경 변수: KAKAO_MAPS_API_KEY)
+2. AI 감정 분석 API (LLM/분류 모델)
+   - 용도: 첫 진입 설문 응답 기반 기분/상황 태깅
+   - 인증: 서버 환경 변수로 키 관리
+   - 출력: moodTag, confidence, preferenceHints
 
 ## 4. 시스템 구조
 1. Web UI 계층
@@ -55,96 +59,61 @@
 1. GET /api/restaurants/nearby (쿼리 파라미터: lat, lng, radius=1000)
 
 2. 백엔드 처리 흐름:
-   
-   a) SK T-Map POI 검색 API 호출
-      - 엔드포인트: https://apis.openapi.sk.com/tmap/pois
-      - 메서드: GET
-      - 인증: appKey (환경 변수 SK_TMAP_API_KEY)
-      - 필수 요청 파라미터:
-        ```
-        version=1
-        searchType=all (전체 검색)
-        reqCoordType=WGS84GEO (요청 좌표계)
-        resCoordType=WGS84GEO (응답 좌표계)
-        searchKeyword=음식점 (또는 카테고리별 검색)
-        page=1
-        count=20 (기본값, 조정 가능)
-        ```
-      - 선택 파라미터:
-        ```
-        multiPoint=N
-        searchtypCd=A
-        poiGroupYn=N
-        ```
-   
-   b) SK API 응답 파싱
-      - 응답 형식 (JSON):
-        ```json
-        {
-          "searchPoiInfo": {
-            "totalCount": 총_식당_수,
-            "count": 반환된_개수,
-            "pois": {
-              "poi": [
-                {
-                  "id": "SKT_POI_ID_12345",
-                  "name": "식당명",
-                  "noorLat": 위도,
-                  "noorLon": 경도,
-                  "frontLat": 입구_위도,
-                  "frontLon": 입구_경도,
-                  "lowerAddrName": "상세주소",
-                  "middleAddrName": "시군구",
-                  "upperAddrName": "시도",
-                  "telNo": "전화번호",
-                  "firstBuildYear": "건축연도"
-                }
-              ]
-            }
-          }
-        }
-        ```
-   
-   c) 내부 Restaurant 모델로 변환
+   a) 입력 위치 검증 + 대구 지역 경계 체크
+      - 서비스 범위: 대구광역시 한정(초기)
+      - 대구 외 좌표는 400 반환 또는 대구 중심 fallback 정책 중 하나를 명시적으로 적용
+
+   b) Kakao Local API 호출
+      - 인증: Authorization: KakaoAK {REST_API_KEY}
+      - 기본 쿼리: 음식점/카테고리 키워드
+      - 응답 상위 n개를 반경(radius) 기준으로 2차 필터링
+
+   c) Kakao API 응답 파싱
+      - 핵심 필드: id, place_name, x(lng), y(lat), address_name, category_group_name
+
+   d) 내부 Restaurant 모델로 변환
       - 매핑 규칙:
         ```
         Restaurant {
-          externalId: poi.id (외부 ID)
-          name: poi.name (식당명)
-          lat: poi.noorLat (건물 위도)
-          lng: poi.noorLon (건물 경도)
-          address: poi.lowerAddrName (주소)
-          category: 카테고리 분류 로직 적용
-          externalRating: null (T-Map에는 평점 없음)
+          externalId: kakao.id (외부 ID)
+          name: kakao.place_name (식당명)
+          lat: kakao.y
+          lng: kakao.x
+          address: kakao.address_name
+          category: kakao.category_group_name 또는 내부 매핑값
+          externalRating: null (외부 평점 미제공 시 기본값 정책 적용)
           createdAt: 현재시각
           updatedAt: 현재시각
         }
         ```
-   
-   d) DB에 upsert (중복 제거)
+
+   e) DB에 upsert (중복 제거)
       - Restaurant.externalId 기준으로 존재 여부 확인
       - 존재하면 updatedAt만 갱신
       - 없으면 신규 삽입
-   
-   e) 거리 계산 (Haversine 공식)
+
+   f) 거리 계산 (Haversine 공식)
       - 사용자 좌표(lat, lng)와 Restaurant(lat, lng) 사이의 거리 계산
       - 결과: distanceScore 계산에 사용 (섹션 12 참고)
-   
-   f) 리뷰 통계 결합
+
+   g) 리뷰 통계 결합
       - 각 Restaurant마다 ReviewStats 조회
       - ReviewStats 없으면 기본값 (reviewCount=0, reviewAvg=0)
       - reviewScore 계산
-   
-   g) 추천 점수 계산 (섹션 12 참고)
-      - recommendScore = 0.4 * distanceScore + 0.3 * externalScore + 0.3 * reviewScore
-   
-   h) 정렬 및 응답
+
+   h) 사용자 기분 점수 결합(설문 완료 사용자)
+      - UserMoodProfile 존재 시 moodScore 계산
+      - moodTag와 식당 카테고리/리뷰 키워드 간 적합도 반영
+
+   i) 추천 점수 계산 (섹션 12 참고)
+
+   j) 정렬 및 응답
       - 기본: 추천순 (recommendScore DESC)
       - 옵션: 거리순 (distance ASC)
       - 응답 포맷 (추천순으로 정렬된 리스트)
 
 3. 성능 목표
-   - SK API 응답: ~500ms (네트워크 지연 포함)
+   - Kakao API 응답: ~500ms (네트워크 지연 포함)
    - DB 처리/계산: ~200ms
    - 전체 p95: 800ms 이내
    - 실패 시: 최대 2회 재시도 (섹션 9.2 참고)
@@ -158,11 +127,26 @@
 3. 리뷰 upsert
 4. ReviewStats 트랜잭션 갱신
 
+### 5.5 이벤트성 리뷰 스파이크 필터
+1. 추천 계산 직전 식당별 최근 N시간(기본 24h) 리뷰 수를 집계한다.
+2. 이전 동일 구간 대비 급증(기본 2.5배 이상)이고 최소 리뷰 수 임계치(기본 12건) 이상이면 스파이크 후보로 본다.
+3. Gemini가 해당 묶음을 이벤트/체험단/리워드성 리뷰로 판정하면 해당 기간 리뷰를 삭제한다.
+4. 삭제 후 최신 ReviewStats를 다시 계산해 추천 점수에 반영한다.
+
+### 5.4 첫 진입 설문 + AI 기분 분석
+1. 첫 방문 시 온보딩 설문 모달 표시(세션/로컬 상태 기반 1회 표시)
+2. 설문 응답 POST /api/onboarding/survey
+3. 서버에서 AI 감정 분석 API 호출
+4. 분석 결과를 UserMoodProfile로 저장
+5. nearby 추천 계산 시 moodScore를 함께 반영
+
 ## 6. 인터페이스 아키텍처
 ### 6.1 API 엔드포인트
 1. GET /api/restaurants/nearby
 2. GET /api/restaurants/{restaurantId}/reviews
 3. POST /api/restaurants/{restaurantId}/reviews
+4. POST /api/onboarding/survey
+5. GET /api/users/me/mood-profile
 
 ### 6.2 계약 원칙
 1. Base Path: /api
@@ -175,6 +159,7 @@
 1. Restaurant
 2. Review
 3. ReviewStats
+4. UserMoodProfile
 
 ### 7.2 무결성 제약
 1. Restaurant.externalId UNIQUE
@@ -202,13 +187,13 @@
 3. 리뷰 저장 응답 p95 500ms 이내
 
 ### 9.2 안정성 목표
-1. SK API 실패 시 최대 2회 재시도
+1. Kakao API 실패 시 최대 2회 재시도
 2. 재시도 실패 시 fallback 응답
 3. 5xx 에러율 1% 미만 목표
 
 ### 9.3 관측성
 1. 필수 로그: traceId, endpoint, latencyMs, statusCode
-2. 주요 메트릭: nearby 실패율, 권한 허용률, 리뷰 등록 성공률
+2. 주요 메트릭: nearby 실패율, 권한 허용률, 설문 완료율, 기분 분석 성공률, 리뷰 등록 성공률
 
 ## 10. UI/UX 아키텍처
 ### 10.1 디자인 원칙
@@ -227,6 +212,7 @@
 2. Empty: 반경 확장 CTA
 3. Error: 재시도 버튼 + 안내 문구
 4. 카테고리 변경: 핀/리스트 동기 갱신
+5. 첫 진입 온보딩: 설문 모달 표시 → 완료 후 추천 갱신
 
 ### 10.4 접근성
 1. 대비 4.5:1 이상
@@ -292,6 +278,7 @@
 1. 홈: 지도 먼저 렌더링, 이후 1km 리스트 로드
 2. 카테고리: 칩 선택 시 지도 핀/리스트 동시 갱신
 3. 상세: 요약 카드 + 리뷰 탭 + 리뷰 작성 박스 상단 배치
+4. 첫 진입 설문: 기분/상황/동행 여부/선호 카테고리 질문 모달
 
 ### 11.5 컴포넌트 최소 스펙
 1. 식당 카드: 이름, 거리, 카테고리, 종합점수, 리뷰 수
@@ -316,11 +303,12 @@
 
 ## 12. 추천 계산 아키텍처
 1. 추천 점수 공식
-- recommendScore = 0.4 * distanceScore + 0.3 * externalScore + 0.3 * reviewScore
+- recommendScore = 0.35 * distanceScore + 0.20 * externalScore + 0.30 * reviewScore + 0.15 * moodScore
 2. 정규화 규칙
 - distanceScore: 가까울수록 높은 값
 - externalScore: 외부 평점 기반 0~1 정규화
 - reviewScore: 내부 리뷰 평점 기반 0~1 정규화
+- moodScore: 설문 응답 기반 AI 추론 결과와 식당 속성(카테고리/리뷰 키워드) 간 적합도 0~1 정규화
 
 ## 13. Agent Skills 운영 기준
 이 절은 본 프로젝트 문서/구현 작업에서 사용하는 Skills의 적용 시점과 작성 대상을 정의한다.

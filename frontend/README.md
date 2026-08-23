@@ -1,4 +1,4 @@
-# 🍽️ SG-Food Frontend
+# 🍽️ 뭐 먹을래? Frontend
 
 위치 기반 식당 추천 서비스의 프론트엔드 (HTML/CSS/JavaScript)
 
@@ -78,8 +78,8 @@ npx http-server -p 3000
 ## 📡 API 통신
 
 ### 백엔드 엔드포인트
-- **기본 URL**: `http://localhost:8000/api`
-- **인증**: `X-User-Id` 헤더로 사용자 ID 전달 (서버가 신뢰성 검증)
+- **기본 URL**: 로컬 개발은 `http://localhost:8000/api`, 배포는 프론트 origin의 `/api`
+- **인증**: 서버가 발급한 익명 Bearer 토큰을 `Authorization` 헤더로 전달
 
 ### 주요 API
 1. **주변 식당 검색**
@@ -97,7 +97,7 @@ npx http-server -p 3000
    ```
    POST /restaurants/{id}/reviews
    Body: { rating: 5, content: "맛있습니다!" }
-   Header: X-User-Id: {userId}
+   Header: Authorization: Bearer {accessToken}
    ```
 
 4. **리뷰 목록 조회**
@@ -108,7 +108,7 @@ npx http-server -p 3000
 5. **리뷰 삭제**
    ```
    DELETE /restaurants/{id}/reviews/{reviewId}
-   Header: X-User-Id: {userId}
+   Header: Authorization: Bearer {accessToken}
    ```
 
 ## 🎯 주요 기능
@@ -140,7 +140,7 @@ npx http-server -p 3000
 - 본인 리뷰만 삭제 가능
 
 ### 6. 상태 유지
-- localStorage로 사용자 ID 저장
+- 서버 발급 익명 인증 토큰은 페이지 메모리에만 보관
 - 마지막 탭 상태 복원 (모바일)
 - 무한 스크롤 지원 (구현 예정)
 
@@ -152,13 +152,14 @@ SK_TMAP_API_KEY=YOUR_KEY
 DATABASE_URL=sqlite:///./sg_food.db
 FASTAPI_HOST=0.0.0.0
 FASTAPI_PORT=8000
-DEBUG=True
+DEBUG=False
+AUTH_SECRET=CHANGE_ME_TO_A_LONG_RANDOM_SECRET
 FRONTEND_URL=http://localhost:3000
 ```
 
 ### 프론트엔드 설정 (js/api.js)
 ```javascript
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = window.APP_CONFIG.api.baseURL;
 const API_TIMEOUT = 10000; // 10초
 ```
 
@@ -255,3 +256,4 @@ console.log(currentMarkers);
 - [OpenStreetMap](https://www.openstreetmap.org/)
 - [Glassmorphism Design](https://www.uxdesigninstitute.com/blog/glassmorphism/)
 - [WCAG 2.2 접근성 가이드](https://www.w3.org/WAI/WCAG22/quickref/)
+

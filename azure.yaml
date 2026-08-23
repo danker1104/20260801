@@ -1,0 +1,29 @@
+name: meok-eat
+metadata:
+  template: custom-containerapp@0.0.1-beta
+
+infra:
+  provider: bicep
+  path: infra
+  parameters:
+    authSecret: ${AUTH_SECRET}
+    kakaoMapsApiKey: ${KAKAO_MAPS_API_KEY}
+    geminiApiKey: ${GEMINI_API_KEY}
+
+services:
+  backend:
+    project: .
+    host: containerapp
+    language: docker
+    docker:
+      path: Dockerfile
+      remoteBuild: true
+      registry: ${AZURE_CONTAINER_REGISTRY_ENDPOINT}
+  frontend:
+    project: frontend
+    host: containerapp
+    language: docker
+    docker:
+      path: Dockerfile
+      remoteBuild: true
+      registry: ${AZURE_CONTAINER_REGISTRY_ENDPOINT}

@@ -63,3 +63,6 @@ htmlcov/
 
 # Copilot agent artifacts
 .agents/
+
+# Azure Developer CLI local state
+.azure/

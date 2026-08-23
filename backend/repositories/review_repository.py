@@ -1,9 +1,10 @@
 """
 Review repository with custom queries.
 """
+from datetime import datetime
 from typing import Optional, List
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, and_, func, delete
 from sqlalchemy.orm import selectinload
 
 from models import Review, ReviewStats
@@ -141,9 +142,9 @@ class ReviewRepository(BaseRepository[Review, ReviewCreate, ReviewUpdate]):
                 func.avg(Review.rating)
             ).where(Review.restaurantId == restaurant_id)
         )
-        row = result.tuple()
+        row = result.first()
         if row:
-            count, avg_rating = row[0]
+            count, avg_rating = row
             return count or 0, float(avg_rating) if avg_rating else 0.0
         return 0, 0.0
 
@@ -168,6 +169,62 @@ class ReviewRepository(BaseRepository[Review, ReviewCreate, ReviewUpdate]):
             )
         )
         return result.scalar()
+
+    async def count_in_period(
+        self,
+        db: AsyncSession,
+        restaurant_id: int,
+        start_at: datetime,
+        end_at: datetime,
+    ) -> int:
+        """특정 기간 내 리뷰 개수 조회"""
+        result = await db.execute(
+            select(func.count(Review.id)).where(
+                and_(
+                    Review.restaurantId == restaurant_id,
+                    Review.createdAt >= start_at,
+                    Review.createdAt < end_at,
+                )
+            )
+        )
+        return int(result.scalar() or 0)
+
+    async def get_in_period(
+        self,
+        db: AsyncSession,
+        restaurant_id: int,
+        start_at: datetime,
+        end_at: datetime,
+        limit: int = 200,
+    ) -> List[Review]:
+        """특정 기간 내 리뷰 목록 조회"""
+        result = await db.execute(
+            select(Review)
+            .where(
+                and_(
+                    Review.restaurantId == restaurant_id,
+                    Review.createdAt >= start_at,
+                    Review.createdAt < end_at,
+                )
+            )
+            .order_by(Review.createdAt.desc())
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def delete_by_ids(
+        self,
+        db: AsyncSession,
+        review_ids: List[int],
+    ) -> int:
+        """리뷰 ID 목록으로 일괄 삭제"""
+        if not review_ids:
+            return 0
+
+        result = await db.execute(
+            delete(Review).where(Review.id.in_(review_ids))
+        )
+        return int(result.rowcount or 0)
 
     async def upsert(
         self,
@@ -219,6 +276,7 @@ class ReviewRepository(BaseRepository[Review, ReviewCreate, ReviewUpdate]):
         self,
         db: AsyncSession,
         review_id: int,
+        restaurant_id: int,
         user_id: str
     ) -> bool:
         """
@@ -236,6 +294,7 @@ class ReviewRepository(BaseRepository[Review, ReviewCreate, ReviewUpdate]):
             select(Review).where(
                 and_(
                     Review.id == review_id,
+                    Review.restaurantId == restaurant_id,
                     Review.userId == user_id
                 )
             )

@@ -41,7 +41,7 @@
 
             // 이미 로드되었는지 확인
             if (window.kakao && window.kakao.maps) {
-                console.log('[KakaoMapLoader] 카카오 Maps API가 이미 로드되었습니다.');
+                debugLog('[KakaoMapLoader] 카카오 Maps API가 이미 로드되었습니다.');
                 // 이벤트가 아직 발생하지 않았을 수 있으니 발생시킴
                 dispatchKakaoMapsReadyEvent();
                 resolve(window.kakao.maps);
@@ -53,8 +53,8 @@
             const scriptUrl = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(apiKey)}&autoload=false&libraries=services`;
 
             // 디버깅: SDK URL 출력
-            console.log('[KakaoMapLoader] SDK URL:', scriptUrl);
-            console.log('[KakaoMapLoader] API 키 (처음 8글자):', apiKey.substring(0, 8) + '***');
+            debugLog('[KakaoMapLoader] SDK URL:', scriptUrl);
+            debugLog('[KakaoMapLoader] API 키 (처음 8글자):', apiKey.substring(0, 8) + '***');
 
             // 스크립트 엘리먼트 생성
             const script = document.createElement('script');
@@ -67,7 +67,7 @@
                 console.error('[KakaoMapLoader] ❌ SDK 로드 타임아웃 (10초 초과)');
                 console.error('[KakaoMapLoader] 🔍 카카오 Developer Console 확인 필수:');
                 console.error('  1. https://developers.kakao.com/console/app 접속');
-                console.error('  2. "SG-Food" 앱 클릭');
+                console.error('  2. "뭐 먹을래?" 앱 클릭');
                 console.error('  3. "서비스" 탭 클릭');
                 console.error('  4. "지도(Maps)" 서비스 "활성화" 버튼 클릭 (중요!)');
                 console.error('  5. 페이지 새로고침 (Ctrl+Shift+R)');
@@ -90,19 +90,19 @@
 
             // 성공 이벤트
             script.onload = () => {
-                console.log('[KakaoMapLoader] 스크립트 로드 완료, kakao.maps.load 실행...');
+                debugLog('[KakaoMapLoader] 스크립트 로드 완료, kakao.maps.load 실행...');
 
                 if (window.kakao?.maps?.load) {
                     window.kakao.maps.load(() => {
                         clearTimeout(timeout);
-                        console.log('[KakaoMapLoader] ✅ 카카오 Maps API 로드 완료');
+                        debugLog('[KakaoMapLoader] ✅ 카카오 Maps API 로드 완료');
                         resolve(window.kakao.maps);
                         dispatchKakaoMapsReadyEvent();
                     });
                 } else if (window.kakao?.maps) {
                     // 예외적 환경에서 load 함수가 없더라도 maps 객체가 있으면 진행
                     clearTimeout(timeout);
-                    console.log('[KakaoMapLoader] ✅ 카카오 Maps API 로드 완료 (fallback)');
+                    debugLog('[KakaoMapLoader] ✅ 카카오 Maps API 로드 완료 (fallback)');
                     resolve(window.kakao.maps);
                     dispatchKakaoMapsReadyEvent();
                 } else {
@@ -113,7 +113,7 @@
 
             // DOM에 추가
             document.head.appendChild(script);
-            console.log('[KakaoMapLoader] 카카오 Maps API 로드 시작...');
+            debugLog('[KakaoMapLoader] 카카오 Maps API 로드 시작...');
         });
     }
 
@@ -129,7 +129,7 @@
             }
         });
         document.dispatchEvent(event);
-        console.log('[KakaoMapLoader] kakaoMapsReady 이벤트 발생');
+        debugLog('[KakaoMapLoader] kakaoMapsReady 이벤트 발생');
     }
 
     /**
@@ -184,5 +184,6 @@
         load: loadKakaoMapsSDK,
     };
 
-    console.log('[KakaoMapLoader] 카카오맵 로더 초기화됨');
+    debugLog('[KakaoMapLoader] 카카오맵 로더 초기화됨');
 })();
+

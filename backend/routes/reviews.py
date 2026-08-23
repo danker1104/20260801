@@ -4,7 +4,7 @@ Review routes with async handlers and dependency injection.
 import logging
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Header
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
@@ -15,41 +15,64 @@ from schemas import (
 )
 from services.review_service import ReviewService
 from services.restaurant_service import RestaurantService
+from auth import get_current_user
 
 router = APIRouter(prefix="/api/restaurants", tags=["reviews"])
 logger = logging.getLogger(__name__)
 
 
-def get_user_id(x_user_id: Optional[str] = Header(None)) -> str:
+async def resolve_restaurant_for_review(
+    db: AsyncSession,
+    restaurant_service: RestaurantService,
+    restaurant_id: str,
+    review: Optional[ReviewCreate] = None,
+):
     """
-    요청 헤더에서 userId 추출 (의존성 주입)
-    
-    실제 운영 환경에서는:
-    - JWT 토큰 검증
-    - 세션에서 userId 조회
-    등의 보안 검증을 수행합니다.
-    
-    지금은 테스트를 위해 헤더에서 직접 받습니다.
-    
-    Args:
-        x_user_id: X-User-Id 헤더값
-    
-    Returns:
-        사용자 ID
-    
-    Raises:
-        HTTPException: 인증 정보 없을 시
+    리뷰 관련 API에서 사용할 식당 엔티티를 조회/생성한다.
+
+    - 숫자 ID면 내부 PK로 조회
+    - 문자열 ID면 externalId로 조회
+    - review 메타데이터가 있으면 없는 식당을 자동 생성
     """
-    if not x_user_id:
-        raise HTTPException(status_code=401, detail="인증이 필요합니다")
-    return x_user_id
+    normalized_restaurant_id = str(restaurant_id)
+
+    if normalized_restaurant_id.isdigit():
+        restaurant = await restaurant_service.get_restaurant_by_id(db, int(normalized_restaurant_id))
+        if restaurant:
+            return restaurant
+
+    restaurant = await restaurant_service.get_restaurant_by_external_id(db, normalized_restaurant_id)
+    if restaurant:
+        return restaurant
+
+    if not review:
+        return None
+
+    # 외부 ID 기반 리뷰 작성 시 식당 메타데이터가 포함되면 식당을 자동 생성한다.
+    if not review.restaurantName or review.lat is None or review.lng is None or not review.address:
+        raise HTTPException(
+            status_code=400,
+            detail="식당 정보가 없어 리뷰를 저장할 수 없습니다. 식당명/좌표/주소를 함께 전송하세요",
+        )
+
+    created = await restaurant_service.create_or_get(
+        db=db,
+        external_id=review.externalId or normalized_restaurant_id,
+        name=review.restaurantName,
+        lat=review.lat,
+        lng=review.lng,
+        address=review.address,
+        category=review.category,
+        external_rating=review.externalRating,
+    )
+    return created
 
 
 @router.post("/{restaurant_id}/reviews", response_model=ReviewResponse)
 async def create_review(
     restaurant_id: str,
     review: ReviewCreate,
-    user_id: str = Depends(get_user_id),
+    user_id: str = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -76,13 +99,14 @@ async def create_review(
     try:
         logger.info(f"[{trace_id}] 리뷰 작성 시작 (async): restaurant_id={restaurant_id}, user_id={user_id}")
         
-        # 식당 존재 여부 확인
+        # 식당 조회/자동 생성
         service = RestaurantService()
-        normalized_restaurant_id = str(restaurant_id)
-        if normalized_restaurant_id.isdigit():
-            restaurant = await service.get_restaurant_by_id(db, int(normalized_restaurant_id))
-        else:
-            restaurant = await service.get_restaurant_by_external_id(db, normalized_restaurant_id)
+        restaurant = await resolve_restaurant_for_review(
+            db=db,
+            restaurant_service=service,
+            restaurant_id=restaurant_id,
+            review=review,
+        )
 
         if not restaurant:
             raise HTTPException(status_code=404, detail="식당을 찾을 수 없습니다")
@@ -151,14 +175,16 @@ async def get_reviews(
         
         # 식당 존재 여부 확인
         service = RestaurantService()
-        normalized_restaurant_id = str(restaurant_id)
-        if normalized_restaurant_id.isdigit():
-            restaurant = await service.get_restaurant_by_id(db, int(normalized_restaurant_id))
-        else:
-            restaurant = await service.get_restaurant_by_external_id(db, normalized_restaurant_id)
+        restaurant = await resolve_restaurant_for_review(
+            db=db,
+            restaurant_service=service,
+            restaurant_id=restaurant_id,
+            review=None,
+        )
 
         if not restaurant:
-            raise HTTPException(status_code=404, detail="식당을 찾을 수 없습니다")
+            # 외부 ID 식당은 아직 리뷰가 한 건도 없을 수 있으므로 빈 목록을 반환한다.
+            return ReviewListResponse(total=0, reviews=[])
         
         # 리뷰 조회
         review_service = ReviewService()
@@ -197,7 +223,7 @@ async def get_reviews(
 @router.get("/{restaurant_id}/reviews/me", response_model=ReviewResponse)
 async def get_my_review(
     restaurant_id: str,
-    user_id: str = Depends(get_user_id),
+    user_id: str = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -220,11 +246,12 @@ async def get_my_review(
         logger.info(f"[{trace_id}] 내 리뷰 조회 (async): restaurant_id={restaurant_id}, user_id={user_id}")
         
         service = RestaurantService()
-        normalized_restaurant_id = str(restaurant_id)
-        if normalized_restaurant_id.isdigit():
-            restaurant = await service.get_restaurant_by_id(db, int(normalized_restaurant_id))
-        else:
-            restaurant = await service.get_restaurant_by_external_id(db, normalized_restaurant_id)
+        restaurant = await resolve_restaurant_for_review(
+            db=db,
+            restaurant_service=service,
+            restaurant_id=restaurant_id,
+            review=None,
+        )
 
         if not restaurant:
             raise HTTPException(status_code=404, detail="식당을 찾을 수 없습니다")
@@ -259,9 +286,9 @@ async def get_my_review(
 
 @router.delete("/{restaurant_id}/reviews/{review_id}")
 async def delete_review(
-    restaurant_id: int,
+    restaurant_id: str,
     review_id: int,
-    user_id: str = Depends(get_user_id),
+    user_id: str = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -284,13 +311,25 @@ async def delete_review(
     trace_id = str(uuid.uuid4())
     
     try:
-        logger.info(f"[{trace_id}] 리뷰 삭제 시작 (async): review_id={review_id}, user_id={user_id}")
+        logger.info(f"[{trace_id}] 리뷰 삭제 시작 (async): restaurant_id={restaurant_id}, review_id={review_id}, user_id={user_id}")
+
+        service = RestaurantService()
+        restaurant = await resolve_restaurant_for_review(
+            db=db,
+            restaurant_service=service,
+            restaurant_id=restaurant_id,
+            review=None,
+        )
+
+        if not restaurant:
+            raise HTTPException(status_code=404, detail="식당을 찾을 수 없습니다")
         
         # 리뷰 삭제
         review_service = ReviewService()
         deleted = await review_service.delete_review(
             db=db,
             review_id=review_id,
+            restaurant_id=restaurant.id,
             user_id=user_id,
         )
         

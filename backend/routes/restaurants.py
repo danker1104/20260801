@@ -4,7 +4,7 @@ Restaurant routes with async handlers and dependency injection.
 import logging
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
@@ -13,7 +13,11 @@ from schemas import (
     RestaurantResponse,
 )
 from services.restaurant_service import RestaurantService
+from services.review_service import ReviewService
 from services.kakao_api_client import KakaoApiClient
+from services.daegu_food_client import DaeguFoodClient
+from services.gemini_review_ranker import GeminiReviewRanker
+from services.review_event_filter import ReviewEventFilterService
 
 router = APIRouter(prefix="/api/restaurants", tags=["restaurants"])
 logger = logging.getLogger(__name__)
@@ -73,6 +77,11 @@ async def get_nearby_restaurants(
         except Exception as e:
             logger.warning(f"[{trace_id}] 카카오 API 호출 실패 ({str(e)})")
             all_restaurants = []
+
+        # 대구푸드 공공 API 데이터로 상세 정보 보강
+        daegu_client = DaeguFoodClient()
+        all_restaurants = await daegu_client.enrich_restaurants(all_restaurants)
+        logger.info(f"[{trace_id}] 대구푸드 데이터 보강 완료: {len(all_restaurants)}개")
         
         # 정렬
         if sortBy == "distance":
@@ -83,7 +92,7 @@ async def get_nearby_restaurants(
                 distance = r.get("distance", 0)
                 rating = r.get("externalRating", 0.75)
                 distance_score = max(0, 1 - (distance / radius)) if radius > 0 else 1
-                r["recommendScore"] = distance_score * 0.4 + rating * 0.6
+                r["recommendScore"] = (distance_score * 0.4 + rating * 0.6) * 5.0
             all_restaurants.sort(key=lambda x: x.get("recommendScore", 0), reverse=True)
         
         # 최대 개수 제한
@@ -156,3 +165,97 @@ async def get_restaurant_detail(
     except Exception as e:
         logger.error(f"[{trace_id}] 식당 상세 조회 실패: {str(e)}")
         raise HTTPException(status_code=500, detail="식당 상세 조회에 실패했습니다")
+
+
+@router.post("/daegu/enrich")
+async def enrich_restaurants_with_daegu_food(
+    payload: dict = Body(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    카카오 식당 목록을 받아 대구푸드 공공데이터 필드로 보강
+
+        Request body:
+    {
+            "addr": "수성구",   // optional
+            "userAddress": "대구광역시 수성구 ...", // optional
+      "restaurants": [ ... ]
+    }
+    """
+    trace_id = str(uuid.uuid4())
+
+    try:
+        restaurants = payload.get("restaurants", [])
+        addr = payload.get("addr")
+        user_address = payload.get("userAddress")
+
+        if not isinstance(restaurants, list):
+            raise HTTPException(status_code=400, detail="restaurants는 배열이어야 합니다")
+
+        daegu_client = DaeguFoodClient()
+        valid_restaurants = [r for r in restaurants if isinstance(r, dict)]
+        enriched = await daegu_client.enrich_restaurants(
+            valid_restaurants,
+            preferred_addr=addr,
+            user_address=user_address,
+        )
+
+        # 내부 리뷰 데이터 결합
+        restaurant_service = RestaurantService()
+        review_service = ReviewService()
+        review_event_filter = ReviewEventFilterService()
+        review_payloads = []
+
+        for restaurant in enriched:
+            external_id = str(restaurant.get("externalId") or "")
+            review_count = 0
+            review_avg = 0.0
+            review_snippets = []
+
+            if external_id:
+                db_restaurant = await restaurant_service.get_restaurant_by_external_id(db, external_id)
+                if db_restaurant:
+                    # 단기간 리뷰 폭증 시 Gemini로 이벤트성 여부를 판정해 해당 구간 리뷰를 제거한다.
+                    await review_event_filter.detect_and_purge_spike_reviews(
+                        db=db,
+                        restaurant_id=db_restaurant.id,
+                        restaurant_name=str(restaurant.get("name") or ""),
+                    )
+
+                    review_count, review_avg = await review_service.get_review_stats(db, db_restaurant.id)
+                    recent_reviews = await review_service.get_reviews_by_restaurant(db, db_restaurant.id, 0, 10)
+                    review_snippets = [
+                        {
+                            "rating": rv.rating,
+                            "content": rv.content or "",
+                        }
+                        for rv in recent_reviews
+                    ]
+
+            restaurant["reviewCount"] = int(review_count)
+            restaurant["reviewAvg"] = float(review_avg)
+
+            review_payloads.append(
+                {
+                    "externalId": external_id,
+                    "name": restaurant.get("name"),
+                    "address": restaurant.get("address"),
+                    "reviewCount": int(review_count),
+                    "reviewAvg": float(review_avg),
+                    "reviews": review_snippets,
+                }
+            )
+
+        # Gemini AI 리뷰 분석 기반 추천 정렬 (상위 10개)
+        ranker = GeminiReviewRanker()
+        ranked = await ranker.rank_restaurants(enriched, review_payloads)
+
+        return {
+            "total": len(ranked),
+            "restaurants": ranked,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[{trace_id}] 대구푸드 보강 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail="대구푸드 보강에 실패했습니다")

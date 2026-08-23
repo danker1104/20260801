@@ -23,15 +23,15 @@ document.addEventListener('kakaoMapsReady', (event) => {
     kakaoSdk = event.detail.kakao;
     kakaoMaps = event.detail.maps;
     kakaoMapsReady = true;
-    console.log('[Map] 카카오맵 준비 완료');
-    console.log('[Map] window.kakao:', typeof window.kakao);
-    console.log('[Map] window.kakao.maps:', typeof window.kakao?.maps);
+    debugLog('[Map] 카카오맵 준비 완료');
+    debugLog('[Map] window.kakao:', typeof window.kakao);
+    debugLog('[Map] window.kakao.maps:', typeof window.kakao?.maps);
 }, { once: false }); // once: false로 변경하여 여러 번 발생할 수 있음
 
 // SDK가 이미 로드되었는지 즉시 확인
 setTimeout(() => {
     if (window.kakao && window.kakao.maps && !kakaoMapsReady) {
-        console.log('[Map] SDK가 이미 로드됨 (이벤트 발생 전)');
+        debugLog('[Map] SDK가 이미 로드됨 (이벤트 발생 전)');
         kakaoSdk = window.kakao;
         kakaoMaps = window.kakao.maps;
         kakaoMapsReady = true;
@@ -49,7 +49,7 @@ function waitForKakaoMaps() {
     return new Promise((resolve, reject) => {
         // 이미 준비되었으면 즉시 반환
         if (kakaoMapsReady && kakaoMaps) {
-            console.log('[Map] 카카오맵이 이미 준비됨');
+            debugLog('[Map] 카카오맵이 이미 준비됨');
             resolve();
             return;
         }
@@ -63,7 +63,7 @@ function waitForKakaoMaps() {
         // 이벤트 리스너 추가
         const handleKakaoReady = () => {
             clearTimeout(timeout);
-            console.log('[Map] kakaoMapsReady 이벤트 수신');
+            debugLog('[Map] kakaoMapsReady 이벤트 수신');
             resolve();
         };
 
@@ -85,29 +85,29 @@ function waitForKakaoMaps() {
  */
 async function initMapDesktop(latitude, longitude) {
     try {
-        console.log('[Map Desktop] 초기화 시작:', latitude, longitude);
+        debugLog('[Map Desktop] 초기화 시작:', latitude, longitude);
         
         // 카카오맵이 준비될 때까지 대기
-        console.log('[Map Desktop] kakaoMapsReady 대기 중... kakaoMapsReady=', kakaoMapsReady);
+        debugLog('[Map Desktop] kakaoMapsReady 대기 중... kakaoMapsReady=', kakaoMapsReady);
         await waitForKakaoMaps();
-        console.log('[Map Desktop] waitForKakaoMaps() 완료');
+        debugLog('[Map Desktop] waitForKakaoMaps() 완료');
 
         // 이미 초기화되었으면 중심만 변경
         if (mapDesktop) {
             const moveLatLng = new kakao.maps.LatLng(latitude, longitude);
             mapDesktop.setCenter(moveLatLng);
-            console.log('[Map Desktop] 지도 중심 이동:', latitude, longitude);
+            debugLog('[Map Desktop] 지도 중심 이동:', latitude, longitude);
             return;
         }
 
         const mapContainer = document.getElementById('map');
-        console.log('[Map Desktop] 지도 컨테이너:', mapContainer ? 'found' : 'NOT FOUND');
+        debugLog('[Map Desktop] 지도 컨테이너:', mapContainer ? 'found' : 'NOT FOUND');
         if (!mapContainer) {
             console.error('[Map Desktop] 지도 컨테이너를 찾을 수 없습니다: #map');
             return;
         }
         
-        console.log('[Map Desktop] 컨테이너 크기:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
+        debugLog('[Map Desktop] 컨테이너 크기:', mapContainer.offsetWidth, 'x', mapContainer.offsetHeight);
 
         // 지도 옵션
         const mapOption = {
@@ -116,11 +116,11 @@ async function initMapDesktop(latitude, longitude) {
             mapTypeId: kakao.maps.MapTypeId.ROADMAP,
         };
 
-        console.log('[Map Desktop] kakao.maps:', typeof kakao?.maps, 'kakao.maps.Map:', typeof kakao?.maps?.Map);
+        debugLog('[Map Desktop] kakao.maps:', typeof kakao?.maps, 'kakao.maps.Map:', typeof kakao?.maps?.Map);
         
         // 지도 생성
         mapDesktop = new kakao.maps.Map(mapContainer, mapOption);
-        console.log('[Map Desktop] 지도 생성 완료:', latitude, longitude);
+        debugLog('[Map Desktop] 지도 생성 완료:', latitude, longitude);
 
         // 현재 위치 마커 추가
         addUserLocationMarker(mapDesktop, latitude, longitude);
@@ -149,7 +149,7 @@ async function initMapMobile(latitude, longitude) {
         if (mapMobile) {
             const moveLatLng = new kakao.maps.LatLng(latitude, longitude);
             mapMobile.setCenter(moveLatLng);
-            console.log('[Map Mobile] 지도 중심 이동:', latitude, longitude);
+            debugLog('[Map Mobile] 지도 중심 이동:', latitude, longitude);
             return;
         }
 
@@ -168,7 +168,7 @@ async function initMapMobile(latitude, longitude) {
 
         // 지도 생성
         mapMobile = new kakao.maps.Map(mapContainer, mapOption);
-        console.log('[Map Mobile] 지도 생성 완료:', latitude, longitude);
+        debugLog('[Map Mobile] 지도 생성 완료:', latitude, longitude);
 
         // 현재 위치 마커 추가
         addUserLocationMarker(mapMobile, latitude, longitude);
@@ -206,7 +206,7 @@ function addUserLocationMarker(map, latitude, longitude) {
         });
 
         marker.setMap(map);
-        console.log('[Map] 현재 위치 마커 추가:', latitude, longitude);
+        debugLog('[Map] 현재 위치 마커 추가:', latitude, longitude);
     } catch (error) {
         console.error('[Map] 사용자 마커 추가 실패:', error);
     }
@@ -234,7 +234,7 @@ async function addRestaurantMarkers(map, restaurants) {
             markerArray.push(marker);
         });
 
-        console.log(`[Map] ${restaurants.length}개 식당 마커 추가 완료`);
+        debugLog(`[Map] ${restaurants.length}개 식당 마커 추가 완료`);
     } catch (error) {
         console.error('[Map] 식당 마커 추가 실패:', error);
     }
@@ -298,7 +298,7 @@ function handleMarkerClick(restaurantId) {
 function highlightMarker(restaurantId) {
     // 카카오맵에서는 마커 스타일 변경 시 새 마커 이미지로 교체
     // 현재 구현: 정보 표시로 대체
-    console.log('[Map] 마커 하이라이트:', restaurantId);
+    debugLog('[Map] 마커 하이라이트:', restaurantId);
 }
 
 /**
@@ -315,7 +315,7 @@ function centerMapOnRestaurant(restaurant, map) {
         map.setCenter(centerPosition);
         map.setLevel(3); // 줌 인
 
-        console.log('[Map] 식당으로 중심 이동:', restaurant.name);
+        debugLog('[Map] 식당으로 중심 이동:', restaurant.name);
     } catch (error) {
         console.error('[Map] 중심 이동 실패:', error);
     }
@@ -326,7 +326,7 @@ function centerMapOnRestaurant(restaurant, map) {
  */
 async function refreshMap(latitude, longitude, restaurants) {
     try {
-        console.log('[Map] 지도 새로고침:', latitude, longitude, restaurants.length, '개 식당');
+        debugLog('[Map] 지도 새로고침:', latitude, longitude, restaurants.length, '개 식당');
 
         if (mapDesktop) {
             const moveLatLng = new kakao.maps.LatLng(latitude, longitude);
@@ -355,7 +355,7 @@ function resizeMap() {
         if (mapMobile) {
             mapMobile.relayout();
         }
-        console.log('[Map] 지도 리사이즈 완료');
+        debugLog('[Map] 지도 리사이즈 완료');
     } catch (error) {
         console.error('[Map] 지도 리사이즈 실패:', error);
     }
@@ -385,4 +385,4 @@ window.resizeMap = resizeMap;
 window.handleMarkerClick = handleMarkerClick;
 window.centerMapOnRestaurant = centerMapOnRestaurant;
 
-console.log('[Map] 카카오맵 모듈 로드됨');
+debugLog('[Map] 카카오맵 모듈 로드됨');

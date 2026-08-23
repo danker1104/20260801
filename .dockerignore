@@ -1,0 +1,42 @@
+# VCS
+.git
+.gitignore
+.gitattributes
+
+# Python
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+.venv
+venv
+.pytest_cache
+.mypy_cache
+
+# Local databases and logs
+**/*.db
+**/*.sqlite3
+*.log
+backend/data/
+backend/sg_food.db
+
+# Tests
+backend/test_*.py
+
+# Documentation and planning artifacts
+*.md
+.agents/
+skills-lock.json
+
+# Frontend/build artifacts
+frontend/node_modules
+frontend/dist
+frontend/
+
+# Local env files
+.env
+.env.*
+
+# IDE
+.vscode
+.idea

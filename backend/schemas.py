@@ -32,9 +32,21 @@ class RestaurantResponse(RestaurantBase):
     id: int
     externalId: str
     distance: Optional[float] = Field(None, description="사용자로부터의 거리 (미터)")
-    recommendScore: Optional[float] = Field(None, description="추천 점수 (0~1)")
+    recommendScore: Optional[float] = Field(None, description="추천 점수 (0~5)")
     reviewCount: int = 0
     reviewAvg: float = 0.0
+    aiRecommendedScore: Optional[float] = None
+    aiRecommendationReason: Optional[str] = None
+    daeguFoodId: Optional[str] = None
+    daeguBusinessHours: Optional[str] = None
+    daeguPhone: Optional[str] = None
+    daeguMenu: Optional[str] = None
+    daeguDescription: Optional[str] = None
+    daeguParking: Optional[str] = None
+    daeguReservation: Optional[str] = None
+    daeguSubway: Optional[str] = None
+    daeguBus: Optional[str] = None
+    daeguHomepage: Optional[str] = None
     createdAt: Optional[datetime] = None
     updatedAt: Optional[datetime] = None
     
@@ -60,7 +72,13 @@ class ReviewBase(BaseModel):
 
 class ReviewCreate(ReviewBase):
     """리뷰 생성 요청 (userId는 서버에서 주입)"""
-    pass
+    externalId: Optional[str] = Field(None, min_length=1, max_length=255)
+    restaurantName: Optional[str] = Field(None, min_length=1, max_length=255)
+    category: Optional[str] = Field(None, max_length=100)
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    address: Optional[str] = Field(None, max_length=500)
+    externalRating: Optional[float] = Field(None, ge=0, le=1)
 
 
 class ReviewUpdate(BaseModel):

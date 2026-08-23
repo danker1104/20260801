@@ -1,0 +1,19 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: meok-backend
+    ports:
+      - "8000:8000"
+    environment:
+      PORT: "8000"
+      FASTAPI_HOST: "0.0.0.0"
+      FASTAPI_PORT: "8000"
+      DEBUG: "false"
+      FRONTEND_URL: "http://localhost:3000"
+      # sqlite 파일을 재시작 후에도 유지하려면 볼륨 마운트
+      DATABASE_URL: "sqlite:///./data/sg_food.db"
+    volumes:
+      - ./backend/data:/app/backend/data
+    restart: unless-stopped
