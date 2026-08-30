@@ -281,6 +281,8 @@ function setBottomSheetState(state) {
 
     if (!sheet) return;
 
+    // 드래그로 인해 설정되었을 수 있는 인라인 height 스타일을 제거해야 CSS 클래스의 높이 애니메이션이 정상 동작함
+    sheet.style.removeProperty('height');
     sheet.classList.remove('sheet-collapsed', 'sheet-half', 'sheet-full');
     sheet.classList.add(`sheet-${state}`);
     currentSheetState = state;
@@ -344,6 +346,9 @@ function initBottomSheetGestures() {
         const currentHeight = sheet.offsetHeight;
         const windowH = window.innerHeight;
 
+        // 드래그 종료 후 인라인 스타일을 지우고 표준 상태 적용
+        sheet.style.removeProperty('height');
+
         if (currentHeight < windowH * 0.3) {
             setBottomSheetState('collapsed');
         } else {
@@ -354,6 +359,10 @@ function initBottomSheetGestures() {
     // 핸들 터치/클릭 시 시트 토글 (내려가기 / 처음 그 위치(half)까지 올리기)
     const toggleSheet = (e) => {
         if (e.target.tagName === 'SELECT' || e.target.closest('.sort-section')) return;
+        
+        // 클릭 전 혹시 남아있을 수 있는 인라인 height 제거
+        sheet.style.removeProperty('height');
+
         if (currentSheetState === 'collapsed') {
             setBottomSheetState('half');
         } else {
