@@ -330,7 +330,7 @@ function initBottomSheetGestures() {
         if (!isDragging) return;
         const deltaY = startY - e.touches[0].clientY;
         const newHeight = initialHeight + deltaY;
-        const maxHeight = window.innerHeight - 120;
+        const maxHeight = window.innerHeight * 0.55; // 처음 위치(half) 이상 올라가지 않도록 제한
         if (newHeight >= 70 && newHeight <= maxHeight) {
             sheet.style.height = `${newHeight}px`;
         }
@@ -344,22 +344,20 @@ function initBottomSheetGestures() {
         const currentHeight = sheet.offsetHeight;
         const windowH = window.innerHeight;
 
-        if (currentHeight < windowH * 0.25) {
+        if (currentHeight < windowH * 0.3) {
             setBottomSheetState('collapsed');
-        } else if (currentHeight > windowH * 0.70) {
-            setBottomSheetState('full');
         } else {
             setBottomSheetState('half');
         }
     });
 
-    // 핸들 터치/클릭 시 시트 토글
+    // 핸들 터치/클릭 시 시트 토글 (내려가기 / 처음 그 위치(half)까지 올리기)
     handle.addEventListener('click', (e) => {
         if (e.target.tagName === 'SELECT' || e.target.closest('.sort-section')) return;
-        if (currentSheetState === 'half') {
-            setBottomSheetState('full');
-        } else {
+        if (currentSheetState === 'collapsed') {
             setBottomSheetState('half');
+        } else {
+            setBottomSheetState('collapsed');
         }
     });
 }
