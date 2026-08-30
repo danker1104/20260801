@@ -929,13 +929,13 @@ button, input, select {
     gap: 8px;
     overflow-x: auto;
     flex-wrap: nowrap;
-    padding: 6px 10px;
-    background: rgba(255, 255, 255, 0.88);
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.8);
     border-radius: 24px;
-    box-shadow: 0 4px 16px rgba(31, 42, 68, 0.12);
+    box-shadow: 0 6px 20px rgba(31, 42, 68, 0.12);
     pointer-events: auto;
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
@@ -946,21 +946,41 @@ button, input, select {
 }
 
 .mobile-category-chips .chip {
-    padding: 6px 14px;
-    font-size: 13px;
-    border-radius: 16px;
+    padding: 8px 16px;
+    font-size: 13.5px;
+    border-radius: 18px;
+    min-height: 44px; /* Touch target minimum 44px per Apple HIG & WCAG */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-category-chips .chip:active {
+    transform: scale(0.95);
+}
+
+.mobile-category-chips .chip-active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+    box-shadow: 0 4px 12px rgba(52, 71, 170, 0.3);
 }
 
 /* Floating Action Buttons (FABs) */
 .mobile-fab-group {
     position: absolute;
     right: 16px;
-    bottom: 54vh; /* adjusted above bottom-sheet */
+    bottom: calc(50vh + 16px);
     z-index: 15;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 10px;
+    gap: 12px;
     pointer-events: auto;
     transition: bottom 300ms cubic-bezier(0.25, 1, 0.5, 1);
 }
@@ -972,11 +992,12 @@ button, input, select {
     gap: 8px;
     border: none;
     border-radius: 24px;
-    box-shadow: 0 6px 20px rgba(31, 42, 68, 0.2);
+    box-shadow: 0 8px 24px rgba(31, 42, 68, 0.18);
     cursor: pointer;
     font-size: 14px;
     font-weight: 600;
-    transition: all var(--transition-fast);
+    transition: all 150ms ease;
+    min-height: 44px; /* Touch target minimum */
 }
 
 .fab:active {
@@ -984,18 +1005,19 @@ button, input, select {
 }
 
 .fab-survey {
-    padding: 10px 18px;
+    padding: 12px 20px;
     background: linear-gradient(135deg, #3447AA, #5B6EC7);
     color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .fab-location {
-    width: 44px;
-    height: 44px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: white;
     color: var(--primary-color);
-    font-size: 18px;
+    font-size: 20px;
     border: 1px solid var(--border-color);
 }
 
@@ -1004,13 +1026,13 @@ button, input, select {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 56px; /* above bottom-nav */
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px)); /* Safe area support for iOS/Android */
     z-index: 20;
-    background: rgba(255, 255, 255, 0.96);
+    background: rgba(255, 255, 255, 0.98);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 24px 24px 0 0;
-    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.12);
     border-top: 1px solid rgba(255, 255, 255, 0.9);
     display: flex;
     flex-direction: column;
@@ -1028,23 +1050,30 @@ button, input, select {
 }
 
 .bottom-sheet.sheet-full {
-    height: calc(100vh - var(--navbar-height) - 56px);
+    height: calc(100vh - var(--navbar-height) - 56px - env(safe-area-inset-bottom, 0px));
 }
 
 .sheet-handle {
-    padding: 10px 16px 8px 16px;
+    padding: 12px 16px 8px 16px;
     cursor: grab;
     user-select: none;
     touch-action: none;
     flex-shrink: 0;
+    min-height: 44px; /* Easy touch drag affordance */
+}
+
+.sheet-handle:active .handle-bar {
+    background: var(--primary-color);
+    width: 48px;
 }
 
 .handle-bar {
     width: 40px;
-    height: 4.5px;
+    height: 5px;
     border-radius: 3px;
     background: #CBD5E1;
     margin: 0 auto 10px auto;
+    transition: all 200ms ease;
 }
 
 .sheet-header-summary {
@@ -1066,7 +1095,7 @@ button, input, select {
 }
 
 .sheet-count-badge {
-    padding: 2px 8px;
+    padding: 2px 10px;
     background: var(--soft-surface);
     color: var(--primary-color);
     font-size: 12px;
@@ -1079,11 +1108,13 @@ button, input, select {
 }
 
 .mobile-sort-inline .sort-select {
-    padding: 4px 8px;
+    padding: 6px 12px;
     font-size: 13px;
-    border-radius: 12px;
+    border-radius: 14px;
     background: #F1F5F9;
-    border: none;
+    border: 1px solid var(--border-color);
+    font-weight: 600;
+    min-height: 36px;
 }
 
 .sheet-content {
@@ -1096,19 +1127,37 @@ button, input, select {
 }
 
 .btn-mobile-refresh {
-    margin-top: 12px;
+    margin-top: 16px;
     width: 100%;
     border-radius: 16px;
     padding: 14px;
+    min-height: 48px; /* Touch target minimum 48px */
+    font-size: 15px;
 }
 
-/* Bottom Nav Bar */
+/* Card highlight on map marker click or selection */
+.restaurant-card.card-highlight {
+    border-color: var(--primary-color);
+    background: #F4F6FF;
+    box-shadow: 0 4px 16px rgba(52, 71, 170, 0.15);
+    transform: translateY(-2px);
+}
+
+/* Category Badge Colors */
+.card-category[data-cat="한식"] { background: #FFEEDD; color: #D96B00; }
+.card-category[data-cat="일식"] { background: #E6F4FF; color: #0066CC; }
+.card-category[data-cat="중식"] { background: #FFE6E6; color: #CC0000; }
+.card-category[data-cat="양식"] { background: #F3E8FF; color: #7E22CE; }
+.card-category[data-cat="카페"] { background: #EFEFEF; color: #4A4A4A; }
+
+/* Bottom Nav Bar with Safe Area Insets */
 .bottom-nav {
     position: absolute;
     bottom: 0;
     left: 0;
     right: 0;
-    height: 56px;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     z-index: 30;
     background: white;
     border-top: 1px solid var(--border-color);
@@ -1125,6 +1174,7 @@ button, input, select {
     justify-content: center;
     gap: 2px;
     height: 100%;
+    min-height: 44px;
     background: transparent;
     border: none;
     color: var(--text-secondary);

@@ -654,7 +654,7 @@ function renderRestaurantList(platform) {
     }
 
     container.innerHTML = restaurants.map((restaurant) => `
-        <div class="restaurant-card" data-restaurant-id="${escapeHtml(restaurant.id)}" role="button" tabindex="0">
+        <div class="restaurant-card" id="card-${platform}-${escapeHtml(restaurant.id)}" data-restaurant-id="${escapeHtml(restaurant.id)}" role="button" tabindex="0">
             <div class="card-header">
                 <h3 class="card-name">${escapeHtml(restaurant.name)}</h3>
                 <div class="card-score">${formatRecommendDisplay(restaurant.recommendScore)}</div>
@@ -662,7 +662,7 @@ function renderRestaurantList(platform) {
             
             <div class="card-meta">
                 <span>📍 ${formatDistance(restaurant.distance)}</span>
-                <span class="card-category">${getCategoryEmoji(restaurant.category)} ${escapeHtml(restaurant.category || '기타')}</span>
+                <span class="card-category" data-cat="${escapeHtml(restaurant.category || '기타')}">${getCategoryEmoji(restaurant.category)} ${escapeHtml(restaurant.category || '기타')}</span>
             </div>
             
             <div class="card-footer">
@@ -698,6 +698,17 @@ async function loadRestaurantDetail(restaurantId) {
 
         selectedRestaurant = restaurant;
         detailModalTrigger = document.activeElement;
+
+        // 선택된 카드의 시각적 하이라이트 및 스크롤 이동
+        document.querySelectorAll('.restaurant-card').forEach(c => c.classList.remove('card-highlight'));
+        const targetCardDesktop = document.getElementById(`card-desktop-${normalizedRestaurantId}`);
+        const targetCardMobile = document.getElementById(`card-mobile-${normalizedRestaurantId}`);
+
+        if (targetCardDesktop) targetCardDesktop.classList.add('card-highlight');
+        if (targetCardMobile) {
+            targetCardMobile.classList.add('card-highlight');
+            targetCardMobile.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
 
         // 지도 중심 이동
         centerMapOnRestaurant(restaurant, mapDesktop);
