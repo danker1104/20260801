@@ -9,7 +9,7 @@
     <!-- API 키는 config.js에서 설정되며, 로드는 kakao-map-loader.js에서 처리됩니다 -->
     
     <!-- Custom Styles -->
-    <link rel="stylesheet" href="css/styles.css?v=20260823f">
+    <link rel="stylesheet" href="css/styles.css?v=20260830_close">
 
     <script>
         (function () {
@@ -221,9 +221,9 @@
 
     <!-- Food Preference Survey -->
     <div id="surveyModal" class="survey-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="surveyTitle">
-        <div class="survey-overlay" id="surveyOverlay"></div>
+        <div class="survey-overlay" id="surveyOverlay" onclick="closeSurvey()"></div>
         <section class="survey-card">
-            <button class="survey-close" id="surveyCloseBtn" type="button" aria-label="설문 닫기">&times;</button>
+            <button class="survey-close" id="surveyCloseBtn" type="button" aria-label="설문 닫기" onclick="closeSurvey()" style="position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border: none; background: transparent; font-size: 24px; color: #666; font-weight: 700; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center;">&times;</button>
             <div class="survey-header">
                 <div>
                     <p class="survey-kicker">오늘의 한 끼</p>
