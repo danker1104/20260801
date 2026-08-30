@@ -916,8 +916,8 @@ button, input, select {
     display: none;
     position: relative;
     width: 100%;
-    height: calc(100vh - var(--navbar-height));
-    margin-top: var(--navbar-height);
+    height: 100vh;
+    margin-top: 0;
     overflow: hidden;
     background: var(--background-color);
 }
@@ -1239,6 +1239,10 @@ button, input, select {
     }
 
     .desktop-layout {
+        display: none !important;
+    }
+
+    .navbar {
         display: none !important;
     }
 
