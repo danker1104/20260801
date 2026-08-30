@@ -355,9 +355,15 @@ button, input, select {
     background: var(--primary-color);
     color: white;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 12px;
     font-weight: 600;
+}
+
+.card-score-new {
+    background: #EEF2FF;
+    color: var(--primary-color);
+    border: 1px solid rgba(52, 71, 170, 0.2);
 }
 
 .card-meta {
@@ -1020,13 +1026,6 @@ button, input, select {
 
 .fab:active {
     transform: scale(0.94);
-}
-
-.fab-survey {
-    padding: 12px 20px;
-    background: linear-gradient(135deg, #3447AA, #5B6EC7);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .fab-location {

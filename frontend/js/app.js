@@ -27,9 +27,9 @@ function infoOrNone(value) {
 
 function formatRecommendDisplay(score) {
     if (score === null || score === undefined || Number.isNaN(Number(score))) {
-        return '평가 없음';
+        return '';
     }
-    return formatScore(score);
+    return `⭐ ${formatScore(score)}`;
 }
 
 /**
@@ -440,7 +440,6 @@ function setupEventListeners() {
         mobileLocationFab.addEventListener('click', refreshNearbyRestaurants);
     }
 
-    const mobileSurveyFab = document.getElementById('mobileSurveyFab');
     const bottomNavSurveyBtn = document.getElementById('bottomNavSurveyBtn');
 
     const openSurvey = () => {
@@ -452,9 +451,6 @@ function setupEventListeners() {
         }
     };
 
-    if (mobileSurveyFab) {
-        mobileSurveyFab.addEventListener('click', openSurvey);
-    }
     if (bottomNavSurveyBtn) {
         bottomNavSurveyBtn.addEventListener('click', openSurvey);
     }
@@ -659,11 +655,15 @@ function renderRestaurantList(platform) {
         return;
     }
 
-    container.innerHTML = restaurants.map((restaurant) => `
+    container.innerHTML = restaurants.map((restaurant) => {
+        const scoreText = formatRecommendDisplay(restaurant.recommendScore);
+        const hasRating = restaurant.reviewAvg && Number(restaurant.reviewAvg) > 0;
+        
+        return `
         <div class="restaurant-card" id="card-${platform}-${escapeHtml(restaurant.id)}" data-restaurant-id="${escapeHtml(restaurant.id)}" role="button" tabindex="0">
             <div class="card-header">
                 <h3 class="card-name">${escapeHtml(restaurant.name)}</h3>
-                <div class="card-score">${formatRecommendDisplay(restaurant.recommendScore)}</div>
+                ${scoreText ? `<div class="card-score">${scoreText}</div>` : `<div class="card-score card-score-new">NEW</div>`}
             </div>
             
             <div class="card-meta">
@@ -672,11 +672,12 @@ function renderRestaurantList(platform) {
             </div>
             
             <div class="card-footer">
-                <span>⭐ ${restaurant.reviewAvg ? `${formatAverageRating(restaurant.reviewAvg)} (${formatStars(restaurant.reviewAvg)})` : '평가 없음'}</span>
+                <span>${hasRating ? `⭐ ${formatAverageRating(restaurant.reviewAvg)} (${formatStars(restaurant.reviewAvg)})` : '✨ 첫 리뷰를 작성해보세요'}</span>
                 <span>📝 ${restaurant.reviewCount || 0}개 리뷰</span>
             </div>
         </div>
-    `).join('');
+        `;
+    }).join('');
 
     container.querySelectorAll('.restaurant-card').forEach((card) => {
         const openDetail = () => loadRestaurantDetail(card.dataset.restaurantId);
