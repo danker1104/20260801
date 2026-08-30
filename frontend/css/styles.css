@@ -544,8 +544,8 @@ button, input, select {
     max-height: min(700px, 90vh);
     overflow-y: auto;
     overscroll-behavior: contain;
-    padding: var(--spacing-xl);
-    background: rgba(255, 255, 255, 0.96);
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.98);
     border: 1px solid rgba(255, 255, 255, 0.8);
     border-radius: var(--radius-lg);
     box-shadow: 0 20px 60px rgba(31, 42, 68, 0.22);
@@ -554,14 +554,15 @@ button, input, select {
 
 .survey-close {
     position: absolute;
-    top: var(--spacing-md);
-    right: var(--spacing-md);
+    top: 16px;
+    right: 16px;
     width: 36px;
     height: 36px;
     border: none;
-    background: transparent;
-    font-size: 24px;
-    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 22px;
+    line-height: 1;
+    color: var(--text-primary);
     font-weight: 700;
     cursor: pointer;
     display: flex;
@@ -569,19 +570,21 @@ button, input, select {
     justify-content: center;
     border-radius: 50%;
     transition: all var(--transition-fast);
-    z-index: 2;
+    z-index: 10;
 }
 
-.survey-close:hover {
-    color: var(--text-primary);
-    background: rgba(0, 0, 0, 0.06);
+.survey-close:hover,
+.survey-close:active {
+    color: var(--error-color);
+    background: rgba(230, 57, 70, 0.1);
 }
 
 .survey-header {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: var(--spacing-md);
+    gap: 12px;
+    padding-right: 40px; /* X 버튼과 헤더/프로그레스바 겹침 방지 */
     margin-bottom: var(--spacing-xl);
 }
 

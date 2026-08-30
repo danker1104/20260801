@@ -138,13 +138,6 @@
                         <button class="chip" data-category="카페">☕ 카페</button>
                     </div>
                 </div>
-
-                <!-- Floating Action Buttons (FAB Group) -->
-                <div class="mobile-fab-group">
-                    <button id="mobileLocationFab" class="fab fab-location" title="내 위치로 이동" aria-label="내 위치로 이동">
-                        🎯
-                    </button>
-                </div>
             </div>
 
             <!-- Interactive Bottom Sheet -->
@@ -223,9 +216,9 @@
     <div id="surveyModal" class="survey-modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="surveyTitle">
         <div class="survey-overlay" id="surveyOverlay" onclick="closeSurvey()"></div>
         <section class="survey-card">
-            <button class="survey-close" id="surveyCloseBtn" type="button" aria-label="설문 닫기" onclick="closeSurvey()" style="position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border: none; background: transparent; font-size: 24px; color: #666; font-weight: 700; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center;">&times;</button>
+            <button class="survey-close" id="surveyCloseBtn" type="button" aria-label="설문 닫기" onclick="closeSurvey()">&times;</button>
             <div class="survey-header">
-                <div>
+                <div class="survey-header-text">
                     <p class="survey-kicker">오늘의 한 끼</p>
                     <h2 id="surveyTitle">지금, 어떤 음식이 끌리나요?</h2>
                 </div>

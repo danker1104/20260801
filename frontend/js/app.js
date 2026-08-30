@@ -443,12 +443,6 @@ function setupEventListeners() {
         refreshBtnMobile.addEventListener('click', refreshNearbyRestaurants);
     }
 
-    // 모바일 FAB 버튼 이벤트
-    const mobileLocationFab = document.getElementById('mobileLocationFab');
-    if (mobileLocationFab) {
-        mobileLocationFab.addEventListener('click', refreshNearbyRestaurants);
-    }
-
     const bottomNavSurveyBtn = document.getElementById('bottomNavSurveyBtn');
 
     const openSurvey = () => {
