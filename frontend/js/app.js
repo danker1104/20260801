@@ -352,12 +352,20 @@ function initBottomSheetGestures() {
     });
 
     // 핸들 터치/클릭 시 시트 토글 (내려가기 / 처음 그 위치(half)까지 올리기)
-    handle.addEventListener('click', (e) => {
+    const toggleSheet = (e) => {
         if (e.target.tagName === 'SELECT' || e.target.closest('.sort-section')) return;
         if (currentSheetState === 'collapsed') {
             setBottomSheetState('half');
         } else {
             setBottomSheetState('collapsed');
+        }
+    };
+
+    handle.addEventListener('click', toggleSheet);
+    handle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleSheet(e);
         }
     });
 }

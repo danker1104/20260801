@@ -52,9 +52,9 @@
             <!-- Map Panel (60%) -->
             <div class="panel panel-map">
                 <div id="map" class="map-container"></div>
-                <div id="mapLoading" class="loading-indicator" style="display: none;">
+                <div id="mapLoading" class="loading-indicator" style="display: none;" aria-live="polite">
                     <div class="spinner"></div>
-                    <p>지도 로드 중...</p>
+                    <p>지도 로드 중…</p>
                 </div>
             </div>
 
@@ -100,13 +100,13 @@
                 <div class="list-container">
                     <div id="restaurantList" class="restaurant-list">
                         <div class="empty-state">
-                            <p>식당을 검색하고 있습니다...</p>
+                            <p>식당을 검색하고 있습니다…</p>
                         </div>
                     </div>
                     
-                    <div id="listLoading" class="loading-indicator" style="display: none;">
+                    <div id="listLoading" class="loading-indicator" style="display: none;" aria-live="polite">
                         <div class="spinner"></div>
-                        <p>목록 로드 중...</p>
+                        <p>목록 로드 중…</p>
                     </div>
                 </div>
 
@@ -122,14 +122,14 @@
             <!-- Fullscreen Map Base -->
             <div class="mobile-map-wrapper">
                 <div id="mapMobile" class="map-container"></div>
-                <div id="mapLoadingMobile" class="loading-indicator" style="display: none;">
+                <div id="mapLoadingMobile" class="loading-indicator" style="display: none;" aria-live="polite">
                     <div class="spinner"></div>
-                    <p>지도 로드 중...</p>
+                    <p>지도 로드 중…</p>
                 </div>
 
                 <!-- Top Floating Quick Category Bar -->
                 <div class="mobile-top-bar">
-                    <div class="category-chips mobile-category-chips">
+                    <div class="category-chips mobile-category-chips" role="group" aria-label="식당 카테고리 필터">
                         <button class="chip chip-active" data-category="">🍴 전체</button>
                         <button class="chip" data-category="한식">🥘 한식</button>
                         <button class="chip" data-category="일식">🍣 일식</button>
@@ -141,10 +141,10 @@
 
                 <!-- Floating Action Buttons (FAB Group) -->
                 <div class="mobile-fab-group">
-                    <button id="mobileSurveyFab" class="fab fab-survey" title="음식 맞춤 추천 설문">
+                    <button id="mobileSurveyFab" class="fab fab-survey" title="음식 맞춤 추천 설문" aria-label="음식 맞춤 추천 설문">
                         🎲 <span>오늘 뭐 먹지?</span>
                     </button>
-                    <button id="mobileLocationFab" class="fab fab-location" title="내 위치로 이동">
+                    <button id="mobileLocationFab" class="fab fab-location" title="내 위치로 이동" aria-label="내 위치로 이동">
                         🎯
                     </button>
                 </div>
@@ -153,7 +153,7 @@
             <!-- Interactive Bottom Sheet -->
             <div id="bottomSheet" class="bottom-sheet sheet-half">
                 <!-- Drag Handle & Summary Header -->
-                <div id="sheetHandle" class="sheet-handle">
+                <div id="sheetHandle" class="sheet-handle" role="button" aria-label="주변 식당 목록 시트 토글" tabindex="0">
                     <div class="handle-bar"></div>
                     <div class="sheet-header-summary">
                         <div class="sheet-title-group">
@@ -161,6 +161,7 @@
                             <span id="sheetRestaurantCount" class="sheet-count-badge">0개</span>
                         </div>
                         <div class="sort-section mobile-sort-inline">
+                            <label for="sortSelectMobile" class="sr-only">정렬 선택</label>
                             <select id="sortSelectMobile" class="sort-select">
                                 <option value="recommend">⭐ 추천순</option>
                                 <option value="distance">📍 거리순</option>
@@ -174,13 +175,13 @@
                     <div class="list-container">
                         <div id="restaurantListMobile" class="restaurant-list">
                             <div class="empty-state">
-                                <p>식당을 검색하고 있습니다...</p>
+                                <p>식당을 검색하고 있습니다…</p>
                             </div>
                         </div>
                         
-                        <div id="listLoadingMobile" class="loading-indicator" style="display: none;">
+                        <div id="listLoadingMobile" class="loading-indicator" style="display: none;" aria-live="polite">
                             <div class="spinner"></div>
-                            <p>목록 로드 중...</p>
+                            <p>목록 로드 중…</p>
                         </div>
                     </div>
 
@@ -193,16 +194,16 @@
 
             <!-- Mobile Bottom Navigation Bar -->
             <nav class="bottom-nav">
-                <button class="bottom-nav-item" data-state="collapsed">
-                    <span class="nav-icon">🗺️</span>
+                <button class="bottom-nav-item" data-state="collapsed" aria-label="지도 모드">
+                    <span class="nav-icon" aria-hidden="true">🗺️</span>
                     <span class="nav-label">지도</span>
                 </button>
-                <button class="bottom-nav-item active" data-state="half">
-                    <span class="nav-icon">📋</span>
+                <button class="bottom-nav-item active" data-state="half" aria-label="식당 목록 모드">
+                    <span class="nav-icon" aria-hidden="true">📋</span>
                     <span class="nav-label">식당 목록</span>
                 </button>
-                <button id="bottomNavSurveyBtn" class="bottom-nav-item">
-                    <span class="nav-icon">🎲</span>
+                <button id="bottomNavSurveyBtn" class="bottom-nav-item" aria-label="음식 맞춤 추천 설문">
+                    <span class="nav-icon" aria-hidden="true">🎲</span>
                     <span class="nav-label">뭐먹지?</span>
                 </button>
             </nav>
@@ -241,10 +242,10 @@
     </div>
 
     <!-- Error Toast -->
-    <div id="errorToast" class="toast toast-error" style="display: none;"></div>
+    <div id="errorToast" class="toast toast-error" style="display: none;" role="alert" aria-live="polite"></div>
 
     <!-- Success Toast -->
-    <div id="successToast" class="toast toast-success" style="display: none;"></div>
+    <div id="successToast" class="toast toast-success" style="display: none;" role="status" aria-live="polite"></div>
 
     <!-- Scripts -->
     <!-- 1. 설정 파일 로드 -->

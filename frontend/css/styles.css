@@ -61,6 +61,20 @@ body {
     background-color: var(--background-color);
     color: var(--text-primary);
     overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Screen Reader Only Utility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
 }
 
 /* ===== Typography ===== */
@@ -76,6 +90,7 @@ p {
 
 button, input, select {
     font-family: inherit;
+    touch-action: manipulation;
 }
 
 /* ===== Navbar ===== */
@@ -494,6 +509,7 @@ button, input, select {
     border-radius: var(--radius-lg);
     max-height: 90vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
     animation: slideUp var(--transition-normal);
 }
 
@@ -521,6 +537,7 @@ button, input, select {
     width: min(100%, 560px);
     max-height: min(700px, 90vh);
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: var(--spacing-xl);
     background: rgba(255, 255, 255, 0.96);
     border: 1px solid rgba(255, 255, 255, 0.8);
@@ -1123,6 +1140,7 @@ button, input, select {
     display: flex;
     flex-direction: column;
     overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 0 16px 16px 16px;
     -webkit-overflow-scrolling: touch;
 }
