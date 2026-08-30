@@ -9,6 +9,8 @@ let mapDesktop = null;
 let mapMobile = null;
 let desktopMarkers = [];
 let mobileMarkers = [];
+let desktopUserMarker = null;
+let mobileUserMarker = null;
 let selectedMarker = null;
 
 // 카카오맵 준비 완료 대기
@@ -185,12 +187,21 @@ async function initMapMobile(latitude, longitude) {
 }
 
 /**
- * 사용자 현위치 마커 추가
+ * 사용자 현위치 마커 추가 / 업데이트
  */
 function addUserLocationMarker(map, latitude, longitude) {
     try {
-        // 커스텀 마커 오버레이
+        const isDesktop = (map === mapDesktop);
+        let currentUserMarker = isDesktop ? desktopUserMarker : mobileUserMarker;
+
         const markerPosition = new kakao.maps.LatLng(latitude, longitude);
+
+        if (currentUserMarker) {
+            currentUserMarker.setPosition(markerPosition);
+            currentUserMarker.setMap(map);
+            debugLog('[Map] 현재 위치 마커 이동:', latitude, longitude);
+            return;
+        }
 
         const markerImageUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI4IiBmaWxsPSIjMzQ0N0FBIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiLz48L3N2Zz4=';
 
@@ -206,11 +217,35 @@ function addUserLocationMarker(map, latitude, longitude) {
         });
 
         marker.setMap(map);
-        debugLog('[Map] 현재 위치 마커 추가:', latitude, longitude);
+        if (isDesktop) {
+            desktopUserMarker = marker;
+        } else {
+            mobileUserMarker = marker;
+        }
+
+        debugLog('[Map] 현재 위치 마커 신규 추가:', latitude, longitude);
     } catch (error) {
-        console.error('[Map] 사용자 마커 추가 실패:', error);
+        console.error('[Map] 사용자 마커 추가/갱신 실패:', error);
     }
 }
+
+/**
+ * 사용자 위치 이동 시 지도 중심 및 내 위치 마커 통합 갱신
+ */
+function updateUserLocation(latitude, longitude) {
+    const moveLatLng = new kakao.maps.LatLng(latitude, longitude);
+
+    if (mapDesktop) {
+        mapDesktop.setCenter(moveLatLng);
+        addUserLocationMarker(mapDesktop, latitude, longitude);
+    }
+    if (mapMobile) {
+        mapMobile.setCenter(moveLatLng);
+        addUserLocationMarker(mapMobile, latitude, longitude);
+    }
+}
+
+window.updateUserLocation = updateUserLocation;
 
 /**
  * 식당 마커 추가

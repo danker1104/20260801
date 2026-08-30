@@ -89,35 +89,69 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 async function requestLocationPermission() {
     return new Promise((resolve) => {
+        // 보안 컨텍스트 검사 (HTTP 접속 환경 등에서 브라우저 Geolocation API 차단 감지)
+        if (window.isSecureContext === false) {
+            console.warn('⚠️ 보안 연결(HTTPS 또는 localhost)이 아니므로 브라우저 정책상 위치 정보(Geolocation)가 제한됩니다.');
+            debugLog('⚠️ 비보안 환경(HTTP): 기본 위치(강남역)로 Fallback 진행합니다.');
+            resolve(currentLocation);
+            return;
+        }
+
         if (!('geolocation' in navigator)) {
             console.warn('⚠️  브라우저에서 Geolocation을 지원하지 않습니다');
             resolve(currentLocation);
             return;
         }
 
+        const optionsHigh = {
+            enableHighAccuracy: true,
+            timeout: 10000, // 10초로 타임아웃 확장
+            maximumAge: 0,
+        };
+
+        const optionsLow = {
+            enableHighAccuracy: false, // GPS 수신 불량 시 Wi-Fi/네트워크 기반 시도
+            timeout: 10000,
+            maximumAge: 30000,
+        };
+
+        const handleSuccess = (position) => {
+            currentLocation = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+            };
+            debugLog('✅ 현재 위치 감지 성공:', currentLocation);
+            
+            // 실시간 위치 추적 시작
+            startLocationTracking();
+            resolve(currentLocation);
+        };
+
+        // 1차 고정밀 위치 요청
         navigator.geolocation.getCurrentPosition(
-            (position) => {
-                currentLocation = {
-                    latitude: position.coords.latitude,
-                    longitude: position.coords.longitude,
-                    accuracy: position.coords.accuracy,
-                };
-                debugLog('✅ 현재 위치:', currentLocation);
-                
-                // 실시간 위치 추적 시작
-                startLocationTracking();
-                resolve(currentLocation);
-            },
+            handleSuccess,
             (error) => {
-                console.warn('⚠️  위치 권한 거부:', error.message);
-                // fallback 기본값(강남역) 사용
-                resolve(currentLocation);
+                console.warn('⚠️ 1차 고정밀 위치 조회 실패:', error.message, `(code: ${error.code})`);
+                
+                // 권한 거부가 아닌 타임아웃/수신 불가 시, 2차 네트워크 기반 시도
+                if (error.code !== error.PERMISSION_DENIED) {
+                    debugLog('🔄 네트워크/Wi-Fi 기반 2차 위치 조회 시도...');
+                    navigator.geolocation.getCurrentPosition(
+                        handleSuccess,
+                        (fallbackErr) => {
+                            console.warn('⚠️ 2차 위치 조회도 실패:', fallbackErr.message);
+                            debugLog('⚠️ 기본 위치(강남역)로 Fallback 진행합니다.');
+                            resolve(currentLocation);
+                        },
+                        optionsLow
+                    );
+                } else {
+                    debugLog('⚠️ 위치 권한 거부됨. 기본 위치(강남역)로 Fallback 진행합니다.');
+                    resolve(currentLocation);
+                }
             },
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0,
-            }
+            optionsHigh
         );
     });
 }
@@ -128,6 +162,11 @@ async function requestLocationPermission() {
  */
 async function requestCurrentLocationOnce() {
     return new Promise((resolve, reject) => {
+        if (window.isSecureContext === false) {
+            reject(new Error('보안 연결(HTTPS 또는 localhost)에서만 위치 정보 재조회가 가능합니다'));
+            return;
+        }
+
         if (!('geolocation' in navigator)) {
             reject(new Error('Geolocation을 지원하지 않는 브라우저입니다'));
             return;
@@ -170,7 +209,7 @@ function startLocationTracking() {
                 accuracy: position.coords.accuracy,
             };
 
-            // 위치 변화 감지 (반경 100m 이상)
+            // 위치 변화 감지 (20m 이상 이동 시)
             const distance = calculateDistance(
                 currentLocation.latitude,
                 currentLocation.longitude,
@@ -178,18 +217,22 @@ function startLocationTracking() {
                 newLocation.longitude
             );
 
-            if (distance > 100) {
+            if (distance > 20) {
                 debugLog(`📍 위치 변경 감지 (${distance.toFixed(0)}m)`);
                 currentLocation = newLocation;
 
-                // 지도 중심 이동 (카카오맵 API)
-                if (window.mapDesktop) {
-                    const moveLatLng = new kakao.maps.LatLng(currentLocation.latitude, currentLocation.longitude);
-                    window.mapDesktop.setCenter(moveLatLng);
-                }
-                if (window.mapMobile) {
-                    const moveLatLng = new kakao.maps.LatLng(currentLocation.latitude, currentLocation.longitude);
-                    window.mapMobile.setCenter(moveLatLng);
+                // 지도 중심 및 내 위치 마커 갱신
+                if (typeof window.updateUserLocation === 'function') {
+                    window.updateUserLocation(currentLocation.latitude, currentLocation.longitude);
+                } else {
+                    if (window.mapDesktop) {
+                        const moveLatLng = new kakao.maps.LatLng(currentLocation.latitude, currentLocation.longitude);
+                        window.mapDesktop.setCenter(moveLatLng);
+                    }
+                    if (window.mapMobile) {
+                        const moveLatLng = new kakao.maps.LatLng(currentLocation.latitude, currentLocation.longitude);
+                        window.mapMobile.setCenter(moveLatLng);
+                    }
                 }
 
                 // 식당 정보 자동 갱신 (1km 반경, 최대 10개)
@@ -213,23 +256,121 @@ function startLocationTracking() {
 function updateResponsiveLayout() {
     const isMobile = window.innerWidth <= 768;
     const desktopLayout = document.querySelector('.desktop-layout');
-    const mobileTabs = document.querySelector('.mobile-tabs');
+    const mobileLayout = document.querySelector('.mobile-layout');
 
     if (isMobile) {
-        desktopLayout.style.setProperty('display', 'none', 'important');
-        mobileTabs.style.setProperty('display', 'flex', 'important');
-        debugLog('📱 모바일 레이아웃 활성화 (', window.innerWidth, 'px)');
+        if (desktopLayout) desktopLayout.style.setProperty('display', 'none', 'important');
+        if (mobileLayout) mobileLayout.style.setProperty('display', 'block', 'important');
+        debugLog('📱 모바일 바텀시트 레이아웃 활성화 (', window.innerWidth, 'px)');
     } else {
-        desktopLayout.style.setProperty('display', 'flex', 'important');
-        mobileTabs.style.setProperty('display', 'none', 'important');
+        if (desktopLayout) desktopLayout.style.setProperty('display', 'flex', 'important');
+        if (mobileLayout) mobileLayout.style.setProperty('display', 'none', 'important');
         debugLog('🖥️ 데스크톱 레이아웃 활성화 (', window.innerWidth, 'px)');
     }
+}
+
+let currentSheetState = 'half'; // 'collapsed' | 'half' | 'full'
+
+/**
+ * 바텀시트 상태 변경 (collapsed / half / full)
+ */
+function setBottomSheetState(state) {
+    const sheet = document.getElementById('bottomSheet');
+    const fabGroup = document.querySelector('.mobile-fab-group');
+    const bottomNavItems = document.querySelectorAll('.bottom-nav-item');
+
+    if (!sheet) return;
+
+    sheet.classList.remove('sheet-collapsed', 'sheet-half', 'sheet-full');
+    sheet.classList.add(`sheet-${state}`);
+    currentSheetState = state;
+
+    // FAB 위치 조정
+    if (fabGroup) {
+        if (state === 'full') {
+            fabGroup.style.bottom = '85vh';
+        } else if (state === 'half') {
+            fabGroup.style.bottom = '54vh';
+        } else {
+            fabGroup.style.bottom = '90px';
+        }
+    }
+
+    // 하단 네비게이션 활성화 표시
+    bottomNavItems.forEach(item => {
+        const itemState = item.getAttribute('data-state');
+        if (itemState) {
+            item.classList.toggle('active', itemState === state);
+        }
+    });
+
+    setTimeout(() => resizeMap(), 150);
+}
+
+/**
+ * 바텀시트 드래그 제스처 초기화
+ */
+function initBottomSheetGestures() {
+    const handle = document.getElementById('sheetHandle');
+    const sheet = document.getElementById('bottomSheet');
+    if (!handle || !sheet) return;
+
+    let startY = 0;
+    let initialHeight = 0;
+    let isDragging = false;
+
+    handle.addEventListener('touchstart', (e) => {
+        startY = e.touches[0].clientY;
+        initialHeight = sheet.offsetHeight;
+        isDragging = true;
+        sheet.style.transition = 'none';
+    }, { passive: true });
+
+    handle.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        const deltaY = startY - e.touches[0].clientY;
+        const newHeight = initialHeight + deltaY;
+        const maxHeight = window.innerHeight - 120;
+        if (newHeight >= 70 && newHeight <= maxHeight) {
+            sheet.style.height = `${newHeight}px`;
+        }
+    }, { passive: true });
+
+    handle.addEventListener('touchend', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        sheet.style.transition = '';
+
+        const currentHeight = sheet.offsetHeight;
+        const windowH = window.innerHeight;
+
+        if (currentHeight < windowH * 0.25) {
+            setBottomSheetState('collapsed');
+        } else if (currentHeight > windowH * 0.70) {
+            setBottomSheetState('full');
+        } else {
+            setBottomSheetState('half');
+        }
+    });
+
+    // 핸들 터치/클릭 시 시트 토글
+    handle.addEventListener('click', (e) => {
+        if (e.target.tagName === 'SELECT' || e.target.closest('.sort-section')) return;
+        if (currentSheetState === 'half') {
+            setBottomSheetState('full');
+        } else {
+            setBottomSheetState('half');
+        }
+    });
 }
 
 /**
  * 이벤트 리스너 등록
  */
 function setupEventListeners() {
+    // 바텀시트 제스처 초기화
+    initBottomSheetGestures();
+
     // 윈도우 리사이즈
     window.addEventListener('resize', () => {
         updateResponsiveLayout();
@@ -246,10 +387,10 @@ function setupEventListeners() {
         });
     });
 
-    // 모바일 카테고리 칩
-    document.querySelectorAll('#listTab .chip').forEach((chip) => {
+    // 모바일 오버레이 카테고리 칩
+    document.querySelectorAll('.mobile-category-chips .chip').forEach((chip) => {
         chip.addEventListener('click', (e) => {
-            document.querySelectorAll('#listTab .chip').forEach((c) => c.classList.remove('chip-active'));
+            document.querySelectorAll('.mobile-category-chips .chip').forEach((c) => c.classList.remove('chip-active'));
             e.target.classList.add('chip-active');
             currentCategory = e.target.getAttribute('data-category');
             loadRestaurants();
@@ -287,24 +428,38 @@ function setupEventListeners() {
         refreshBtnMobile.addEventListener('click', refreshNearbyRestaurants);
     }
 
-    // 탭 토글 (모바일)
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    tabBtns.forEach((btn) => {
+    // 모바일 FAB 버튼 이벤트
+    const mobileLocationFab = document.getElementById('mobileLocationFab');
+    if (mobileLocationFab) {
+        mobileLocationFab.addEventListener('click', refreshNearbyRestaurants);
+    }
+
+    const mobileSurveyFab = document.getElementById('mobileSurveyFab');
+    const bottomNavSurveyBtn = document.getElementById('bottomNavSurveyBtn');
+
+    const openSurvey = () => {
+        if (typeof window.openFoodSurvey === 'function') {
+            window.openFoodSurvey();
+        } else {
+            const surveyModal = document.getElementById('surveyModal');
+            if (surveyModal) surveyModal.style.display = 'flex';
+        }
+    };
+
+    if (mobileSurveyFab) {
+        mobileSurveyFab.addEventListener('click', openSurvey);
+    }
+    if (bottomNavSurveyBtn) {
+        bottomNavSurveyBtn.addEventListener('click', openSurvey);
+    }
+
+    // 모바일 하단 네비게이션 버튼
+    document.querySelectorAll('.bottom-nav-item[data-state]').forEach((btn) => {
         btn.addEventListener('click', () => {
-            const tab = btn.getAttribute('data-tab');
-            switchTab(tab);
+            const state = btn.getAttribute('data-state');
+            setBottomSheetState(state);
         });
     });
-
-    // 탭 토글 버튼 (모바일)
-    const toggleTabBtn = document.getElementById('toggleTabBtn');
-    if (toggleTabBtn) {
-        toggleTabBtn.addEventListener('click', () => {
-            const currentTab = document.querySelector('.tab-pane-active');
-            const nextTab = currentTab.id === 'mapTab' ? 'listTab' : 'mapTab';
-            switchTab(nextTab.replace('Tab', ''));
-        });
-    }
 
     // 모달 닫기
     const modalOverlay = document.getElementById('modalOverlay');
@@ -327,6 +482,10 @@ function setupEventListeners() {
     // 마커 클릭 이벤트
     window.addEventListener('markerClick', (e) => {
         loadRestaurantDetail(e.detail.restaurantId);
+        // 마커 클릭 시 모바일이면 시트를 half로 조절하여 지도와 카드를 함께 감상하도록 지원
+        if (window.innerWidth <= 768 && currentSheetState === 'full') {
+            setBottomSheetState('half');
+        }
     });
 }
 
@@ -476,6 +635,13 @@ function sortRestaurants() {
 function renderRestaurantList(platform) {
     const containerId = platform === 'desktop' ? 'restaurantList' : 'restaurantListMobile';
     const container = document.getElementById(containerId);
+
+    if (platform === 'mobile') {
+        const countBadge = document.getElementById('sheetRestaurantCount');
+        if (countBadge) {
+            countBadge.textContent = `${restaurants.length}개`;
+        }
+    }
 
     if (restaurants.length === 0) {
         container.innerHTML = `

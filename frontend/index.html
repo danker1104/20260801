@@ -117,64 +117,60 @@
             </div>
         </div>
 
-        <!-- Mobile: Tabbed Layout -->
-        <div class="mobile-tabs">
-            <!-- Tab Buttons -->
-            <div class="tab-buttons">
-                <button class="tab-btn tab-btn-active" data-tab="map">🗺️ 지도</button>
-                <button class="tab-btn" data-tab="list">📋 리스트</button>
-            </div>
+        <!-- Mobile Layout: Fullscreen Map + Bottom Sheet -->
+        <div class="mobile-layout">
+            <!-- Fullscreen Map Base -->
+            <div class="mobile-map-wrapper">
+                <div id="mapMobile" class="map-container"></div>
+                <div id="mapLoadingMobile" class="loading-indicator" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>지도 로드 중...</p>
+                </div>
 
-            <!-- Tab Content -->
-            <div class="tab-content">
-                <!-- Map Tab -->
-                <div id="mapTab" class="tab-pane tab-pane-active">
-                    <div id="mapMobile" class="map-container"></div>
-                    <div id="mapLoadingMobile" class="loading-indicator" style="display: none;">
-                        <div class="spinner"></div>
-                        <p>지도 로드 중...</p>
+                <!-- Top Floating Quick Category Bar -->
+                <div class="mobile-top-bar">
+                    <div class="category-chips mobile-category-chips">
+                        <button class="chip chip-active" data-category="">🍴 전체</button>
+                        <button class="chip" data-category="한식">🥘 한식</button>
+                        <button class="chip" data-category="일식">🍣 일식</button>
+                        <button class="chip" data-category="중식">🥡 중식</button>
+                        <button class="chip" data-category="양식">🍝 양식</button>
+                        <button class="chip" data-category="카페">☕ 카페</button>
                     </div>
                 </div>
 
-                <!-- List Tab -->
-                <div id="listTab" class="tab-pane">
-                    <!-- Filter Section -->
-                    <div class="filter-section">
-                        <h3 class="filter-title">주변 식당</h3>
-                        
-                        <!-- Category Chips -->
-                        <div class="category-chips">
-                            <button class="chip chip-active" data-category="">
-                                🍴 전체
-                            </button>
-                            <button class="chip" data-category="한식">
-                                🥘 한식
-                            </button>
-                            <button class="chip" data-category="일식">
-                                🍣 일식
-                            </button>
-                            <button class="chip" data-category="중식">
-                                🥡 중식
-                            </button>
-                            <button class="chip" data-category="양식">
-                                🍝 양식
-                            </button>
-                            <button class="chip" data-category="카페">
-                                ☕ 카페
-                            </button>
-                        </div>
+                <!-- Floating Action Buttons (FAB Group) -->
+                <div class="mobile-fab-group">
+                    <button id="mobileSurveyFab" class="fab fab-survey" title="음식 맞춤 추천 설문">
+                        🎲 <span>오늘 뭐 먹지?</span>
+                    </button>
+                    <button id="mobileLocationFab" class="fab fab-location" title="내 위치로 이동">
+                        🎯
+                    </button>
+                </div>
+            </div>
 
-                        <!-- Sort Options -->
-                        <div class="sort-section">
-                            <label for="sortSelectMobile">정렬:</label>
+            <!-- Interactive Bottom Sheet -->
+            <div id="bottomSheet" class="bottom-sheet sheet-half">
+                <!-- Drag Handle & Summary Header -->
+                <div id="sheetHandle" class="sheet-handle">
+                    <div class="handle-bar"></div>
+                    <div class="sheet-header-summary">
+                        <div class="sheet-title-group">
+                            <span class="sheet-main-title">📍 주변 식당</span>
+                            <span id="sheetRestaurantCount" class="sheet-count-badge">0개</span>
+                        </div>
+                        <div class="sort-section mobile-sort-inline">
                             <select id="sortSelectMobile" class="sort-select">
                                 <option value="recommend">⭐ 추천순</option>
                                 <option value="distance">📍 거리순</option>
                             </select>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Restaurant List -->
+                <!-- Bottom Sheet Scroll Content Area -->
+                <div class="sheet-content">
                     <div class="list-container">
                         <div id="restaurantListMobile" class="restaurant-list">
                             <div class="empty-state">
@@ -189,11 +185,27 @@
                     </div>
 
                     <!-- Refresh Button -->
-                    <button id="refreshBtnMobile" class="btn btn-primary" style="width: 100%; margin-top: 16px; margin-bottom: 16px;">
+                    <button id="refreshBtnMobile" class="btn btn-primary btn-mobile-refresh">
                         ↻ 현위치 다시 검색
                     </button>
                 </div>
             </div>
+
+            <!-- Mobile Bottom Navigation Bar -->
+            <nav class="bottom-nav">
+                <button class="bottom-nav-item active" data-state="half">
+                    <span class="nav-icon">🗺️</span>
+                    <span class="nav-label">지도</span>
+                </button>
+                <button class="bottom-nav-item" data-state="full">
+                    <span class="nav-icon">📋</span>
+                    <span class="nav-label">식당 목록</span>
+                </button>
+                <button id="bottomNavSurveyBtn" class="bottom-nav-item">
+                    <span class="nav-icon">🎲</span>
+                    <span class="nav-label">뭐먹지?</span>
+                </button>
+            </nav>
         </div>
     </div>
 
@@ -235,12 +247,7 @@
     <div id="successToast" class="toast toast-success" style="display: none;"></div>
 
     <!-- Scripts -->
-    <!-- 1. 런타임 API 베이스 URL 강제 설정 -->
-    <script>
-        window.__API_BASE_URL__ = '/api';
-    </script>
-
-    <!-- 2. 설정 파일 로드 -->
+    <!-- 1. 설정 파일 로드 -->
     <script src="js/config.js?v=20260823f"></script>
     
         <!-- 3. 카카오 Maps API SDK 로더 (config.js의 API 키 사용) -->
