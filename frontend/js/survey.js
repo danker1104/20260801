@@ -88,9 +88,25 @@ function renderSurveyResult() {
 
 function closeSurvey() {
     const modal = document.getElementById('surveyModal');
-    modal.style.display = 'none';
+    if (modal) {
+        modal.style.display = 'none';
+    }
     document.body.classList.remove('survey-open');
 }
+
+function openFoodSurvey() {
+    const modal = document.getElementById('surveyModal');
+    if (!modal) return;
+    surveyStep = 0;
+    surveyAnswers = [];
+    surveyResult = null;
+    renderSurveyStep();
+    modal.style.display = 'flex';
+    document.body.classList.add('survey-open');
+}
+
+window.openFoodSurvey = openFoodSurvey;
+window.closeSurvey = closeSurvey;
 
 function handleSurveyNext() {
     if (surveyResult) {
@@ -129,8 +145,24 @@ function handleSurveyBack() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const modal = document.getElementById('surveyModal');
-    document.getElementById('surveyNextBtn').addEventListener('click', handleSurveyNext);
-    document.getElementById('surveyBackBtn').addEventListener('click', handleSurveyBack);
+    const closeBtn = document.getElementById('surveyCloseBtn');
+    const overlay = document.getElementById('surveyOverlay');
+
+    document.getElementById('surveyNextBtn')?.addEventListener('click', handleSurveyNext);
+    document.getElementById('surveyBackBtn')?.addEventListener('click', handleSurveyBack);
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeSurvey);
+    }
+    if (overlay) {
+        overlay.addEventListener('click', closeSurvey);
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal && modal.style.display !== 'none') {
+            closeSurvey();
+        }
+    });
 
     renderSurveyStep();
     modal.style.display = 'flex';

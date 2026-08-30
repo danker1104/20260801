@@ -552,6 +552,31 @@ button, input, select {
     animation: surveyEnter 300ms ease-out;
 }
 
+.survey-close {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    width: 36px;
+    height: 36px;
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    color: var(--text-secondary);
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all var(--transition-fast);
+    z-index: 2;
+}
+
+.survey-close:hover {
+    color: var(--text-primary);
+    background: rgba(0, 0, 0, 0.06);
+}
+
 .survey-header {
     display: flex;
     align-items: flex-start;
